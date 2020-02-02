@@ -1,8 +1,9 @@
 ## Interface:11302
 ## Title: Onixia Bag Mate
 ## Author: Vinneg
-## Notes: A little helper with Onixia bag distribution. Usage: /onybm opts for options
+## Notes: A little helper with Onyxia bag distribution. Usage: /onybm to toggle window
 ## SavedVariables: Settings
 
 embeds.xml
+locale\locale.xml
 Core.lua
