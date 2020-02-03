@@ -118,6 +118,8 @@ function OnyBagMate:Render()
 
     frame:AddChild(group);
     group:SetPoint('BOTTOM', 0, 5);
+
+    frame:SetStatusText('Minimal bag count is: ' .. (self.db.char.pass or 0));
 end
 
 function OnyBagMate:RenderList()
@@ -211,7 +213,7 @@ function OnyBagMate:UpdateList(item)
     self.db.char.list = result;
 --    print(#self.db.char.list);
 
-    local pass = self.db.char.pass;
+    local pass;
 
     if (pass == nil) then
         pass = item.bags;
@@ -220,6 +222,8 @@ function OnyBagMate:UpdateList(item)
     end
 
     self.db.char.pass = pass;
+
+    frame:SetStatusText('Minimal bag count is: ' .. (self.db.char.pass or 0));
 --    print(self.db.char.pass);
 end
 
@@ -232,7 +236,7 @@ function OnyBagMate:RollList(item)
         end
     end
 
-    sort(result, function(a, b) return a.roll > b.roll end);
+    sort(result, function(a, b) return (a.roll or 0) > (b.roll or 0) end);
 
     self.db.char.list = result;
 end
