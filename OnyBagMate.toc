@@ -2,7 +2,7 @@
 ## Title: Onixia Bag Mate
 ## Author: Vinneg
 ## Notes: A little helper with Onyxia bag distribution. Usage: /onybm to toggle window
-## SavedVariables: Settings
+## SavedVariables: OnyBagMateSettings
 
 embeds.xml
 locale\locale.xml
