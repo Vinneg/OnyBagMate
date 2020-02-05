@@ -1,17 +1,18 @@
 OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'AceEvent-3.0', 'AceComm-3.0');
 
 local AceConfig = LibStub('AceConfig-3.0');
-local AceDB = LibStub('AceDB-3.0');
 local AceConfigDialog = LibStub('AceConfigDialog-3.0');
+local AceDB = LibStub('AceDB-3.0');
 local AceGUI = LibStub('AceGUI-3.0');
+local LSM = LibStub('LibSharedMedia-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 
 local function get(info)
-    return OnyBagMate.db.char[info[#info]];
+    return OnyBagMate.settings.char[info[#info]];
 end
 
 local function set(info, value)
-    OnyBagMate.db.char[info[#info]] = value;
+    OnyBagMate.settings.char[info[#info]] = value;
 end
 
 OnyBagMate.messages = {
@@ -21,11 +22,20 @@ OnyBagMate.messages = {
     whisper = 'WHISPER',
 };
 
+OnyBagMate.UI = {
+    frame = nil,
+    list = nil,
+};
+
+OnyBagMate.state = {
+    pass = nil,
+    list = {},
+};
+
 OnyBagMate.defaults = {
     char = {
         rank = '',
-        pass = nil,
-        list = {},
+        bonus = '',
     },
 };
 
@@ -41,10 +51,21 @@ OnyBagMate.options = {
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
+        header1 = {
+            type = 'header',
+            order = 10,
+        },
+        bonus = {
+            type = 'input',
+            order = 20,
+            name = 'Roll bonus per Onyxia kill',
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
     },
 };
 
-OnyBagMate.db = {};
+OnyBagMate.settings = {};
 
 function OnyBagMate:HandleChatCommand(input)
     if (input == nil) then
@@ -53,9 +74,7 @@ function OnyBagMate:HandleChatCommand(input)
 
     local arg = strlower(input);
 
-    if arg == 'test' then
-        self:ScanPlayer();
-    elseif arg == 'opts' then
+    if arg == 'opts' then
         AceConfigDialog:Open('Options');
     elseif arg == 'open' then
         self:Render();
@@ -66,64 +85,50 @@ function OnyBagMate:OnInitialize()
     self:RegisterChatCommand('onybm', 'HandleChatCommand');
 
     AceConfig:RegisterOptionsTable('Options', self.options);
-    self.db = AceDB:New('OnyBagMateSettings', self.defaults, true);
+    self.settings = AceDB:New('OnyBagMateSettings', self.defaults, true);
 
     self:RegisterComm(self.messages.prefix);
 
     self:ClearList();
 end
 
-local frame;
-local list;
-
 function OnyBagMate:Render()
     self:RegisterEvent('CHAT_MSG_SYSTEM');
 
-    frame = AceGUI:Create('Frame');
-    frame:SetTitle('Onixia Bag Mate');
-    frame:SetLayout('List');
-    frame:SetCallback('OnClose', function(widget) self:UnregisterEvent('CHAT_MSG_SYSTEM'); AceGUI:Release(widget); end)
-
-    local group = AceGUI:Create('SimpleGroup');
-    group:SetFullWidth(true);
-    group:SetLayout('Flow');
-
-    local scan = AceGUI:Create('Button');
-    scan:SetText('Scan raid');
-    scan:SetCallback('OnClick', function() self:DemandScan(); end);
-
-    group:AddChild(scan);
+    self.UI.frame = AceGUI:Create('Frame');
+    self.UI.frame:SetTitle('Onixia Bag Mate');
+    self.UI.frame:SetLayout('List');
+    self.UI.frame:SetCallback('OnClose', function(widget) self:UnregisterEvent('CHAT_MSG_SYSTEM'); AceGUI:Release(widget); end)
 
     local clear = AceGUI:Create('Button');
     clear:SetText('Clear');
+    clear:SetFullWidth(true);
     clear:SetCallback('OnClick', function() self:ClearList(); self:RenderList(); end);
 
-    group:AddChild(clear);
-
-    frame:AddChild(group);
-
-    group:SetHeight(100);
+    self.UI.frame:AddChild(clear);
 
     local group = AceGUI:Create('SimpleGroup');
     group:SetFullWidth(true);
     group:SetFullHeight(true);
     group:SetLayout('Fill');
 
-    list = AceGUI:Create('ScrollFrame');
-    list:SetFullWidth(true);
-    list:SetFullHeight(true);
-    list:SetLayout('List');
+    self.UI.list = AceGUI:Create('ScrollFrame');
+    self.UI.list:SetFullWidth(true);
+    self.UI.list:SetFullHeight(true);
+    self.UI.list:SetLayout('List');
 
-    group:AddChild(list);
+    group:AddChild(self.UI.list);
 
-    frame:AddChild(group);
+    self.UI.frame:AddChild(group);
     group:SetPoint('BOTTOM', 0, 5);
 
-    frame:SetStatusText('Minimal bag count is: ' .. (self.db.char.pass or 0));
+    self:DemandScan();
+
+    self.UI.frame:SetStatusText(L['Frame status'](self.state.pass));
 end
 
 function OnyBagMate:RenderList()
-    list:ReleaseChildren();
+    self.UI.list:ReleaseChildren();
 
     local renderItem = function(item)
         local row = AceGUI:Create('SimpleGroup');
@@ -131,25 +136,25 @@ function OnyBagMate:RenderList()
         row:SetLayout('Flow');
 
         local name = AceGUI:Create('Label');
-        name:SetText(item['name']);
+        name:SetText(item.name);
         row:AddChild(name);
 
         local roll = AceGUI:Create('Label');
-        roll:SetText(item['roll']);
+        roll:SetText(item.roll);
         row:AddChild(roll);
 
-        list:AddChild(row);
+        self.UI.list:AddChild(row);
     end
 
     local result = {};
 
-    for _, v in ipairs(self.db.char.list) do
-        if (v.bags <= self.db.char.pass) then
+    for _, v in ipairs(self.state.list) do
+        if (v.bags <= self.state.pass) then
             tinsert(result, { name = v.name, roll = v.roll });
         end
     end
 
-    sort(result, function(a, b) return a.roll > b.roll end);
+    sort(result, function(a, b) return (a.roll or 0) > (b.roll or 0) end);
 
     for _, v in ipairs(result) do
         renderItem(v);
@@ -159,7 +164,7 @@ end
 function OnyBagMate:ScanPlayer()
     local bags = 0;
 
-    for i = 1, NUM_BAG_SLOTS do
+    for i = 0, NUM_BAG_SLOTS do
         local bagName = GetBagName(i);
 --        print('bag name: ' .. bagName);
 
@@ -183,23 +188,26 @@ function OnyBagMate:OnCommReceived(_, message, _, sender)
 
         self:SendCommMessage(self.messages.prefix, tostring(bags), self.messages.whisper, sender);
     elseif tonumber(message) then
---        print('received answer from: ' .. sender .. ' - ' .. tonumber(message));
-        self:UpdateList({ name = sender, bags = tonumber(message) });
+        local item = { name = sender, bags = tonumber(message) };
+--        print('received answer from: ' .. item.name .. ' - ' .. item.bags);
+        self:UpdateList(item);
+        self:UpdatePass(item);
     end
 end
 
 function OnyBagMate:ClearList()
-    for _, v in ipairs(self.db.char.list) do
-        v['roll'] = 0;
+    for _, v in ipairs(self.state.list) do
+        v.roll = 0;
     end
 end
 
 function OnyBagMate:UpdateList(item)
-    local result = self.db.char.list or {};
+    local result = self.state.list or {};
     local found = false;
 
     for _, v in ipairs(result) do
         if v.name == item.name then
+            v.bags = item.bags;
             found = true;
         end
     end
@@ -210,10 +218,12 @@ function OnyBagMate:UpdateList(item)
 
     sort(result, function(a, b) return a.name < b.name end);
 
-    self.db.char.list = result;
---    print(#self.db.char.list);
+    self.state.list = result;
+--    print(#self.state.list);
+end
 
-    local pass;
+function OnyBagMate:UpdatePass(item)
+    local pass = self.state.pass;
 
     if (pass == nil) then
         pass = item.bags;
@@ -221,24 +231,24 @@ function OnyBagMate:UpdateList(item)
         pass = math.min(pass, item.bags);
     end
 
-    self.db.char.pass = pass;
+    self.state.pass = pass;
 
-    frame:SetStatusText('Minimal bag count is: ' .. (self.db.char.pass or 0));
---    print(self.db.char.pass);
+    self.UI.frame:SetStatusText(L['Frame status'](self.state.pass));
+    --    print(self.state.pass);
 end
 
 function OnyBagMate:RollList(item)
-    local result = self.db.char.list or {};
+    local result = self.state.list or {};
 
     for _, v in ipairs(result) do
-        if (v.name == item.name) then
-            v['roll'] = item.roll;
+        if (v.name == item.name and (v.roll == nil or v.roll == 0)) then
+            v.roll = item.roll;
         end
     end
 
     sort(result, function(a, b) return (a.roll or 0) > (b.roll or 0) end);
 
-    self.db.char.list = result;
+    self.state.list = result;
 end
 
 function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
