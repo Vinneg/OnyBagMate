@@ -3,8 +3,6 @@ OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'A
 local AceConfig = LibStub('AceConfig-3.0');
 local AceConfigDialog = LibStub('AceConfigDialog-3.0');
 local AceDB = LibStub('AceDB-3.0');
-local AceGUI = LibStub('AceGUI-3.0');
-local LSM = LibStub('LibSharedMedia-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 
 local function get(info)
@@ -20,11 +18,6 @@ OnyBagMate.messages = {
     demandScan = 'scan bags',
     raid = 'RAID',
     whisper = 'WHISPER',
-};
-
-OnyBagMate.UI = {
-    frame = nil,
-    list = nil,
 };
 
 OnyBagMate.state = {
@@ -77,7 +70,7 @@ function OnyBagMate:HandleChatCommand(input)
     if arg == 'opts' then
         AceConfigDialog:Open('Options');
     elseif arg == 'open' then
-        self:Render();
+        self.RollFrame:Render();
     end
 end
 
@@ -90,75 +83,6 @@ function OnyBagMate:OnInitialize()
     self:RegisterComm(self.messages.prefix);
 
     self:ClearList();
-end
-
-function OnyBagMate:Render()
-    self:RegisterEvent('CHAT_MSG_SYSTEM');
-
-    self.UI.frame = AceGUI:Create('Frame');
-    self.UI.frame:SetTitle('Onixia Bag Mate');
-    self.UI.frame:SetLayout('List');
-    self.UI.frame:SetCallback('OnClose', function(widget) self:UnregisterEvent('CHAT_MSG_SYSTEM'); AceGUI:Release(widget); end)
-
-    local clear = AceGUI:Create('Button');
-    clear:SetText('Clear');
-    clear:SetFullWidth(true);
-    clear:SetCallback('OnClick', function() self:ClearList(); self:RenderList(); end);
-
-    self.UI.frame:AddChild(clear);
-
-    local group = AceGUI:Create('SimpleGroup');
-    group:SetFullWidth(true);
-    group:SetFullHeight(true);
-    group:SetLayout('Fill');
-
-    self.UI.list = AceGUI:Create('ScrollFrame');
-    self.UI.list:SetFullWidth(true);
-    self.UI.list:SetFullHeight(true);
-    self.UI.list:SetLayout('List');
-
-    group:AddChild(self.UI.list);
-
-    self.UI.frame:AddChild(group);
-    group:SetPoint('BOTTOM', 0, 5);
-
-    self:DemandScan();
-
-    self.UI.frame:SetStatusText(L['Frame status'](self.state.pass));
-end
-
-function OnyBagMate:RenderList()
-    self.UI.list:ReleaseChildren();
-
-    local renderItem = function(item)
-        local row = AceGUI:Create('SimpleGroup');
-        row:SetFullWidth(true);
-        row:SetLayout('Flow');
-
-        local name = AceGUI:Create('Label');
-        name:SetText(item.name);
-        row:AddChild(name);
-
-        local roll = AceGUI:Create('Label');
-        roll:SetText(item.roll);
-        row:AddChild(roll);
-
-        self.UI.list:AddChild(row);
-    end
-
-    local result = {};
-
-    for _, v in ipairs(self.state.list) do
-        if (v.bags <= self.state.pass) then
-            tinsert(result, { name = v.name, roll = v.roll });
-        end
-    end
-
-    sort(result, function(a, b) return (a.roll or 0) > (b.roll or 0) end);
-
-    for _, v in ipairs(result) do
-        renderItem(v);
-    end
 end
 
 function OnyBagMate:ScanPlayer()
@@ -233,7 +157,7 @@ function OnyBagMate:UpdatePass(item)
 
     self.state.pass = pass;
 
-    self.UI.frame:SetStatusText(L['Frame status'](self.state.pass));
+    self.RollFrame:UpdateStatus(self.state.pass);
     --    print(self.state.pass);
 end
 
@@ -264,4 +188,7 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
 
         self:RenderList();
     end
+end
+
+function OnyBagMate:GetClassColor()
 end

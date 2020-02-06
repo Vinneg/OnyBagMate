@@ -7,3 +7,4 @@
 embeds.xml
 locale\locale.xml
 Core.lua
+RollFrame.lua
