@@ -18,6 +18,7 @@ OnyBagMate.messages = {
     demandScan = 'scan bags',
     raid = 'RAID',
     whisper = 'WHISPER',
+    answer = '(.+)#(%d+)'
 };
 
 OnyBagMate.state = {
@@ -90,7 +91,7 @@ function OnyBagMate:ScanPlayer()
 
     for i = 0, NUM_BAG_SLOTS do
         local bagName = GetBagName(i);
---        print('bag name: ' .. bagName);
+        --        print('bag name: ' .. bagName);
 
         if bagName == L['Onyxia Hide Backpack'] then
             bags = bags + 1;
@@ -101,21 +102,30 @@ function OnyBagMate:ScanPlayer()
 end
 
 function OnyBagMate:DemandScan()
---    print('send demand');
+    --    print('send demand');
     self:SendCommMessage(self.messages.prefix, self.messages.demandScan, self.messages.raid);
 end
 
 function OnyBagMate:OnCommReceived(_, message, _, sender)
     if message == self.messages.demandScan then
---        print('received demand from: ' .. sender);
+        --        print('received demand from: ' .. sender);
         local bags = self.ScanPlayer();
 
-        self:SendCommMessage(self.messages.prefix, tostring(bags), self.messages.whisper, sender);
-    elseif tonumber(message) then
-        local item = { name = sender, bags = tonumber(message) };
---        print('received answer from: ' .. item.name .. ' - ' .. item.bags);
-        self:UpdateList(item);
-        self:UpdatePass(item);
+        local _, class = UnitClass("player");
+
+        self:SendCommMessage(self.messages.prefix, class .. '#' .. tostring(bags), self.messages.whisper, sender);
+    else
+        local class, bags = string.match(message, self.messages.answer);
+--        print('class = ' .. class .. ' bags = ' .. bags .. ' name = ' .. sender);
+
+        if class and bags then
+            local item = { name = sender, class = class, bags = tonumber(bags) };
+            --        print('received answer from: ' .. item.name .. ' - ' .. item.bags);
+            self:UpdateList(item);
+            self:UpdatePass(item);
+
+            self.RollFrame:RenderList();
+        end
     end
 end
 
@@ -131,7 +141,9 @@ function OnyBagMate:UpdateList(item)
 
     for _, v in ipairs(result) do
         if v.name == item.name then
+            v.class = item.class;
             v.bags = item.bags;
+
             found = true;
         end
     end
@@ -143,7 +155,7 @@ function OnyBagMate:UpdateList(item)
     sort(result, function(a, b) return a.name < b.name end);
 
     self.state.list = result;
---    print(#self.state.list);
+    --    print(#self.state.list);
 end
 
 function OnyBagMate:UpdatePass(item)
@@ -183,10 +195,10 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     max = tonumber(max);
 
     if (name and roll and min == 1 and max == 100) then
---        print('roll!');
+        --        print('roll!');
         self:RollList({ name = name, roll = roll });
 
-        self:RenderList();
+        self.RollFrame:RenderList();
     end
 end
 

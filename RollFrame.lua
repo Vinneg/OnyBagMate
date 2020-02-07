@@ -14,7 +14,7 @@ function OnyBagMate.RollFrame:Render()
 
     self.frame = AceGUI:Create('Frame');
     self.frame:SetTitle('Onixia Bag Mate');
---    self.frame:SetLayout('List');
+    --    self.frame:SetLayout('List');
     self.frame:SetLayout(nil);
     self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); AceGUI:Release(widget); end)
 
@@ -53,31 +53,62 @@ end
 function OnyBagMate.RollFrame:RenderList()
     self.list:ReleaseChildren();
 
+    local classColor = function(class)
+        if class == 'DEATHKNIGHT' then
+            return 0.77, 0.12, 0.23;
+        elseif class == 'DEMONHUNTER' then
+            return 0.64, 0.19, 0.79;
+        elseif class == 'DRUID' then
+            return 1.00, 0.49, 0.04;
+        elseif class == 'HUNTER' then
+            return 0.67, 0.83, 0.45;
+        elseif class == 'MAGE' then
+            return 0.25, 0.78, 0.92;
+        elseif class == 'MONK' then
+            return 0.00, 1.00, 0.59;
+        elseif class == 'PALADIN' then
+            return 0.96, 0.55, 0.73;
+        elseif class == 'PRIEST' then
+            return 1.00, 1.00, 1.00;
+        elseif class == 'ROGUE' then
+            return 1.00, 0.96, 0.41;
+        elseif class == 'SHAMAN' then
+            return 0.00, 0.44, 0.87;
+        elseif class == 'WARLOCK' then
+            return 0.53, 0.53, 0.93;
+        elseif class == 'WARRIOR' then
+            return 0.78, 0.61,  0.43;
+        end
+    end
+
     local renderItem = function(item)
-        local df = LSM:GetDefault('font');
+        local df = LSM.MediaTable.font[LSM:GetDefault('font')];
 
         local row = AceGUI:Create('SimpleGroup');
         row:SetFullWidth(true);
         row:SetLayout('Flow');
 
+        self.list:AddChild(row);
+
         local name = AceGUI:Create('Label');
-        name:SetFont(df, 22, nil);
+        name:SetFont(df, 18, 'OUTLINE');
+        name:SetColor(classColor(item.class));
         name:SetText(item.name);
+        name:SetFullHeight(true);
         row:AddChild(name);
 
         local roll = AceGUI:Create('Label');
-        roll:SetFont(df, 22, nil);
-        roll:SetText(item.roll);
+        roll:SetFont(df, 18, 'OUTLINE');
+        roll:SetText(item.roll or 0);
+        roll:SetFullHeight(true);
         row:AddChild(roll);
-
-        self.list:AddChild(row);
     end
 
     local result = {};
 
-    for _, v in ipairs(self.state.list) do
-        if (v.bags <= self.state.pass) then
-            tinsert(result, { name = v.name, roll = v.roll });
+    for _, v in ipairs(OnyBagMate.state.list) do
+        if (v.bags <= OnyBagMate.state.pass) then
+            tinsert(result, { name = v.name, class = v.class, roll = v.roll });
         end
     end
 
