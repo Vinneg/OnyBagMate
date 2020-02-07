@@ -6,17 +6,18 @@ local AceDB = LibStub('AceDB-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 
 local function get(info)
-    return OnyBagMate.settings.char[info[#info]];
+    return OnyBagMate.store.char[info[#info]];
 end
 
 local function set(info, value)
-    OnyBagMate.settings.char[info[#info]] = value;
+    OnyBagMate.store.char[info[#info]] = value;
 end
 
 OnyBagMate.messages = {
     prefix = 'OnyBagMate',
     demandScan = 'scan bags',
     raid = 'RAID',
+    whisper = 'WHISPER',
     whisper = 'WHISPER',
     answer = '(.+)#(%d+)'
 };
@@ -41,25 +42,32 @@ OnyBagMate.options = {
         rank = {
             type = 'input',
             order = 1,
-            name = 'Rank # and above',
+            name = L['Rank # and above'],
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
         header1 = {
             type = 'header',
             order = 10,
+            name = '',
         },
         bonus = {
             type = 'input',
             order = 20,
-            name = 'Roll bonus per Onyxia kill',
+            name = L['Roll bonus per Onyxia kill'],
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
+        },
+        import = {
+            type = 'execute',
+            order = 30,
+            name = L['import csv'],
+            func  = function() OnyBagMate.AttendanceFrame:Render(); end,
         },
     },
 };
 
-OnyBagMate.settings = {};
+OnyBagMate.store = {};
 
 function OnyBagMate:HandleChatCommand(input)
     if (input == nil) then
@@ -79,7 +87,7 @@ function OnyBagMate:OnInitialize()
     self:RegisterChatCommand('onybm', 'HandleChatCommand');
 
     AceConfig:RegisterOptionsTable('Options', self.options);
-    self.settings = AceDB:New('OnyBagMateSettings', self.defaults, true);
+    self.store = AceDB:New('OnyBagMateSettings', self.defaults, true);
 
     self:RegisterComm(self.messages.prefix);
 
@@ -200,7 +208,4 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
 
         self.RollFrame:RenderList();
     end
-end
-
-function OnyBagMate:GetClassColor()
 end

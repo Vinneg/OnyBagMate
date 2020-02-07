@@ -13,15 +13,14 @@ function OnyBagMate.RollFrame:Render()
     OnyBagMate:RegisterEvent('CHAT_MSG_SYSTEM');
 
     self.frame = AceGUI:Create('Frame');
-    self.frame:SetTitle('Onixia Bag Mate');
-    --    self.frame:SetLayout('List');
+    self.frame:SetTitle(L['Onyxia Bag Mate']);
     self.frame:SetLayout(nil);
     self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); AceGUI:Release(widget); end)
 
     local clear = AceGUI:Create('Button');
-    clear:SetText('Clear');
+    clear:SetText(L['Clear']);
     clear:SetFullWidth(true);
-    clear:SetCallback('OnClick', function() self:ClearList(); self:RenderList(); end);
+    clear:SetCallback('OnClick', function() OnyBagMate:ClearList(); self:RenderList(); end);
 
     self.frame:AddChild(clear);
     clear:SetPoint('TOPLEFT', 0, 5);
