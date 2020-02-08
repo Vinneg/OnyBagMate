@@ -30,7 +30,7 @@ OnyBagMate.state = {
 OnyBagMate.defaults = {
     char = {
         rank = '',
-        bonus = '',
+        bonus = '5',
         bonuses = {},
         lastBonus = '',
     },
@@ -89,7 +89,7 @@ function OnyBagMate:OnInitialize()
     self:RegisterChatCommand('onybm', 'HandleChatCommand');
 
     AceConfig:RegisterOptionsTable('Options', self.options);
-    self.store = AceDB:New('OnyBagMateSettings', self.defaults, true);
+    self.store = AceDB:New('OnyBagMateStore', self.defaults, true);
 
     self:RegisterComm(self.messages.prefix);
 

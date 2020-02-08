@@ -6,6 +6,7 @@ local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 OnyBagMate.AttendanceFrame = {
     frame = nil,
     text = nil,
+    bonus = '',
     bonuses = {},
     lastBonus = '',
     lastRaid = 3,
@@ -41,18 +42,27 @@ function OnyBagMate.AttendanceFrame:Render()
 end
 
 function OnyBagMate.AttendanceFrame:Import()
+    self.bonus = tonumber(OnyBagMate.store.char.bonus) or 1;
     self.bonuses = {};
     self.lastBonus = '';
 
     string.gsub(self.text:GetText(), '[^\r\n]+', function(item) self:ParseLine(item) end);
+
+    for i, v in pairs(self.bonuses) do
+        OnyBagMate.store.char.bonuses[i] = (OnyBagMate.store.char.bonuses[i] or 0) + v;
+    end
+
+    OnyBagMate.store.char.lastBonus = self.lastBonus;
+
+    AceGUI:Release(self.frame);
+
+    print('OnyBagMate: imported ' .. (self.firstRaid - self.lastRaid) .. '. Last raid set to ' .. OnyBagMate.store.char.lastBonus);
 end
 
 function OnyBagMate.AttendanceFrame:ParseLine(line)
     local items = {};
 
     string.gsub(line, '[^,]+', function(item) local res = string.gsub(item, '"', ''); tinsert(items, res); end);
-
-    print(#items);
 
     if items[1] == 'Name' then
         self:HandleHeader(items);
@@ -62,27 +72,32 @@ function OnyBagMate.AttendanceFrame:ParseLine(line)
 end
 
 function OnyBagMate.AttendanceFrame:HandleHeader(header)
-    print(header);
-
     self.lastBonus = header[self.firstRaid];
+
+    local found = false;
 
     for i = self.firstRaid, #header do
         if header[i] == OnyBagMate.store.char.lastBonus then
             self.lastRaid = i - 1;
+            found = true;
         end
+    end
+
+    if not found then
+        self.lastRaid = #header;
     end
 end
 
 function OnyBagMate.AttendanceFrame:HandleLine(line)
-    if self.lastRaid <  self.firstRaid then
+    if self.lastRaid < self.firstRaid then
         return;
     end
 
-    print(line);
-
-    local result = {name = line[1], bonus = 0};
+    local res = 0;
 
     for i = self.firstRaid, self.lastRaid do
-        result.bonus = result.bonus + (tonumber(line[i]) or 0);
+        res = res + (tonumber(line[i]) or 0) * self.bonus;
     end
+
+    self.bonuses[line[1]] = res;
 end

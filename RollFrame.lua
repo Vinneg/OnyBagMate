@@ -15,7 +15,7 @@ function OnyBagMate.RollFrame:Render()
     self.frame = AceGUI:Create('Frame');
     self.frame:SetTitle(L['Onyxia Bag Mate']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); AceGUI:Release(widget); end)
+    self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); OnyBagMate:ClearList(); AceGUI:Release(widget); end)
 
     local clear = AceGUI:Create('Button');
     clear:SetText(L['Clear']);
@@ -93,12 +93,16 @@ function OnyBagMate.RollFrame:RenderList()
         name:SetFont(df, 18, 'OUTLINE');
         name:SetColor(classColor(item.class));
         name:SetText(item.name);
+        name:SetRelativeWidth(0.3);
         name:SetFullHeight(true);
         row:AddChild(name);
 
+        local rollTotal = '' .. ((item.roll or 0) + (item.bonus or 0)) .. ' (' .. (item.roll or 0) .. 'roll + ' .. (item.bonus or 0) .. 'bonus)';
+
         local roll = AceGUI:Create('Label');
         roll:SetFont(df, 18, 'OUTLINE');
-        roll:SetText(item.roll or 0);
+        roll:SetText(rollTotal);
+        roll:SetRelativeWidth(0.7);
         roll:SetFullHeight(true);
         row:AddChild(roll);
     end
@@ -107,7 +111,7 @@ function OnyBagMate.RollFrame:RenderList()
 
     for _, v in ipairs(OnyBagMate.state.list) do
         if (v.bags <= OnyBagMate.state.pass) then
-            tinsert(result, { name = v.name, class = v.class, roll = v.roll });
+            tinsert(result, { name = v.name, class = v.class, roll = v.roll, bonus = OnyBagMate.store.char.bonuses[v.name] or 0});
         end
     end
 

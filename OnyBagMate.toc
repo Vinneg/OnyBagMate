@@ -1,9 +1,9 @@
 ## Interface: 11303
-## Version: 1.0
+## Version: 1.1
 ## Title: Onixia Bag Mate
 ## Author: Vinneg
 ## Notes: A little helper with Onyxia bag distribution. Usage: /onybm to toggle window
-## SavedVariables: OnyBagMateSettings
+## SavedVariables: OnyBagMateStore
 
 embeds.xml
 locale\locale.xml
