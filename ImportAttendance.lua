@@ -1,17 +1,20 @@
 local OnyBagMate = LibStub('AceAddon-3.0'):GetAddon('OnyBagMate');
 
 local AceGUI = LibStub('AceGUI-3.0');
-local LSM = LibStub('LibSharedMedia-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 
 OnyBagMate.AttendanceFrame = {
     frame = nil,
     text = nil,
+    bonuses = {},
+    lastBonus = '',
+    lastRaid = 3,
+    firstRaid = 3,
 };
 
 function OnyBagMate.AttendanceFrame:Render()
     self.frame = AceGUI:Create('Frame');
-    self.frame:SetTitle('Onixia Bag Mate');
+    self.frame:SetTitle(L['CSV data']);
     self.frame:SetLayout(nil);
     self.frame:SetCallback('OnClose', function(widget) AceGUI:Release(widget); end)
 
@@ -38,41 +41,48 @@ function OnyBagMate.AttendanceFrame:Render()
 end
 
 function OnyBagMate.AttendanceFrame:Import()
-    local lines = {};
+    self.bonuses = {};
+    self.lastBonus = '';
 
-    string.gsub(self.text:GetText(), '[^\r\n]+', function(item) tinsert(lines, item); end);
-
-    for _, v in ipairs(lines) do
-        self:ParseLine(v);
-    end
+    string.gsub(self.text:GetText(), '[^\r\n]+', function(item) self:ParseLine(item) end);
 end
 
 function OnyBagMate.AttendanceFrame:ParseLine(line)
     local items = {};
 
-    string.gsub(line, '[^,]+', function(item) tinsert(items, item); end);
+    string.gsub(line, '[^,]+', function(item) local res = string.gsub(item, '"', ''); tinsert(items, res); end);
 
     print(#items);
---    self:HandleHeader(items[2]);
 
---    for _, v in ipairs(items) do
---        if v == '"Name"' then
---            print(v);
---        else
---        end
---    end
+    if items[1] == 'Name' then
+        self:HandleHeader(items);
+    else
+        self:HandleLine(items);
+    end
 end
 
 function OnyBagMate.AttendanceFrame:HandleHeader(header)
     print(header);
---    local items = {};
---
---    string.gsub(header, '[^,]+', function(item) tinsert(items, item); end);
---
---    for _, v in ipairs(items) do
---        if v == '"Name"' then
---            print(v);
---        else
---        end
---    end
+
+    self.lastBonus = header[self.firstRaid];
+
+    for i = self.firstRaid, #header do
+        if header[i] == OnyBagMate.store.char.lastBonus then
+            self.lastRaid = i - 1;
+        end
+    end
+end
+
+function OnyBagMate.AttendanceFrame:HandleLine(line)
+    if self.lastRaid <  self.firstRaid then
+        return;
+    end
+
+    print(line);
+
+    local result = {name = line[1], bonus = 0};
+
+    for i = self.firstRaid, self.lastRaid do
+        result.bonus = result.bonus + (tonumber(line[i]) or 0);
+    end
 end

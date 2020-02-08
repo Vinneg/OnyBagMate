@@ -9,5 +9,5 @@ L['Roll regexp'] = '(.+) rolls (%d+) %((%d+)-(%d+)%)';
 L['Frame status'] = function(count) return 'Minimal bag count is: ' .. (count or 0) end;
 L['Rank # and above'] = true;
 L['Roll bonus per Onyxia kill'] = true;
-L['import csv'] = true;
-L['csv data'] = true;
+L['Import csv'] = true;
+L['CSV data'] = true;

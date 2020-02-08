@@ -31,6 +31,8 @@ OnyBagMate.defaults = {
     char = {
         rank = '',
         bonus = '',
+        bonuses = {},
+        lastBonus = '',
     },
 };
 
@@ -61,7 +63,7 @@ OnyBagMate.options = {
         import = {
             type = 'execute',
             order = 30,
-            name = L['import csv'],
+            name = L['Import csv'],
             func  = function() OnyBagMate.AttendanceFrame:Render(); end,
         },
     },

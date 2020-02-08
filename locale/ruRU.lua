@@ -9,5 +9,5 @@ L['Roll regexp'] = '(.+) выбрасывает (%d+) %((%d+)-(%d+)%)';
 L['Frame status'] = function(count) return 'Минимальное кол-во сумок: ' .. (count or 0) end;
 L['Rank # and above'] = 'Ранг # и выше';
 L['Roll bonus per Onyxia kill'] = 'Бонус к роллу за убийство Ониксии';
-L['import csv'] = 'импорт csv';
-L['csv data'] = 'csv данные';
+L['Import csv'] = 'Импорт csv';
+L['CSV data'] = 'CSV данные';
