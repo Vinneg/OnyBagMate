@@ -30,6 +30,7 @@ OnyBagMate.state = {
     class = '',
     pass = nil,
     list = {},
+    bagId = 17966,
 };
 
 OnyBagMate.defaults = {
@@ -102,7 +103,9 @@ function OnyBagMate:HandleChatCommand(input)
 
     local arg = strlower(input);
 
-    if arg == 'opts' then
+    if arg == 'test' then
+        OnyBagMate:ScanPlayer();
+    elseif arg == 'opts' then
         AceConfigDialog:Open('Options');
     elseif arg == 'open' then
         self.RollFrame:Render();
@@ -128,11 +131,25 @@ function OnyBagMate:ScanPlayer()
     local bags = 0;
 
     for i = 0, NUM_BAG_SLOTS do
-        local bagName = GetBagName(i);
-        --        print('bag name: ' .. bagName);
+        if i ~= 0 then
+            local invID = ContainerIDToInventoryID(i);
+            local itemId = GetInventoryItemID("player", invID);
 
-        if bagName == L['Onyxia Hide Backpack'] then
-            bags = bags + 1;
+            if itemId == self.state.bagId then
+                bags = bags + 1;
+            end
+        end
+
+        local slots = GetContainerNumSlots(i);
+
+        if slots ~= 0 then
+            for j = 1, slots do
+                local itemId = GetContainerItemID(i, j);
+
+                if itemId == self.state.bagId then
+                    bags = bags + 1;
+                end
+            end
         end
     end
 
