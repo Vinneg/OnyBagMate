@@ -27,6 +27,7 @@ OnyBagMate.messages = {
 
 OnyBagMate.state = {
     name = '',
+    class = '',
     pass = nil,
     list = {},
 };
@@ -118,6 +119,7 @@ function OnyBagMate:OnInitialize()
     self:RegisterComm(self.messages.bonusEvent, 'handleBonusEvent');
 
     self.state.name = GetUnitName('player', false);
+    self.state.class = select(2, UnitClass("player"));
 
     self:ClearList();
 end
@@ -147,9 +149,7 @@ function OnyBagMate:handleScanEvent(_, message, _, sender)
         --        print('received demand from: ' .. sender);
         local bags = self.ScanPlayer();
 
-        local _, class = UnitClass("player");
-
-        self:SendCommMessage(self.messages.scanEvent, class .. '#' .. tostring(bags), self.messages.whisper, sender);
+        self:SendCommMessage(self.messages.scanEvent, self.state.class .. '#' .. tostring(bags), self.messages.whisper, sender);
     else
         local class, bags = string.match(message, self.messages.answer);
         --        print('class = ' .. class .. ' bags = ' .. bags .. ' name = ' .. sender);
