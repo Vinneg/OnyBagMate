@@ -1,4 +1,4 @@
-OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'AceEvent-3.0', 'AceComm-3.0');
+OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'AceEvent-3.0', 'AceComm-3.0', 'AceTimer-3.0');
 
 local AceConfig = LibStub('AceConfig-3.0');
 local AceConfigDialog = LibStub('AceConfigDialog-3.0');
@@ -31,6 +31,7 @@ OnyBagMate.state = {
     pass = nil,
     list = {},
     bagId = 17966,
+    version = 1.2,
 };
 
 OnyBagMate.defaults = {
@@ -125,6 +126,12 @@ function OnyBagMate:OnInitialize()
     self.state.class = select(2, UnitClass("player"));
 
     self:ClearList();
+
+    self:ScheduleTimer('PrintVersion', 5);
+end
+
+function OnyBagMate:PrintVersion()
+    print('|cFF00FAF6OnyBagMate loaded! Version: ' .. self.state.version .. '|r');
 end
 
 function OnyBagMate:ScanPlayer()
