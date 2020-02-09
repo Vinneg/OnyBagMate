@@ -52,7 +52,7 @@ OnyBagMate.options = {
         header1 = {
             type = 'header',
             order = 10,
-            name = '',
+            name = L['Bonuses'],
         },
         enableBonuses = {
             type = 'toggle',
@@ -62,7 +62,7 @@ OnyBagMate.options = {
             set = function(info, value) set(info, value); end,
         },
         bonus = {
-            hidden = function() return OnyBagMate.store.char.enableBonuses or false; end,
+            hidden = function() return not (OnyBagMate.store.char.enableBonuses or false); end,
             type = 'input',
             order = 30,
             name = L['Roll bonus per Onyxia kill'],
@@ -70,7 +70,7 @@ OnyBagMate.options = {
             set = function(info, value) set(info, value); end,
         },
         importBonuses = {
-            hidden = function() return OnyBagMate.store.char.enableBonuses or false; end,
+            hidden = function() return not (OnyBagMate.store.char.enableBonuses or false); end,
             type = 'execute',
             order = 40,
             name = L['Import csv'],

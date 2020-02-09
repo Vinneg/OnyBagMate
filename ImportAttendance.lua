@@ -56,7 +56,7 @@ function OnyBagMate.AttendanceFrame:Import()
 
     AceGUI:Release(self.frame);
 
-    print('OnyBagMate: imported ' .. (self.firstRaid - self.lastRaid) .. '. Last raid set to ' .. OnyBagMate.store.char.lastBonus);
+    print('OnyBagMate: imported ' .. (self.firstRaid - self.lastRaid + 1) .. '. Last raid set to ' .. OnyBagMate.store.char.lastBonus);
 end
 
 function OnyBagMate.AttendanceFrame:ParseLine(line)
