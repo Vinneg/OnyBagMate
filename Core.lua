@@ -3,31 +3,30 @@ OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'A
 local AceConfig = LibStub('AceConfig-3.0');
 local AceConfigDialog = LibStub('AceConfigDialog-3.0');
 local AceDB = LibStub('AceDB-3.0');
-local AceGUI = LibStub('AceGUI-3.0');
-local LSM = LibStub('LibSharedMedia-3.0');
+local AceSerializer = LibStub('AceSerializer-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 
 local function get(info)
-    return OnyBagMate.settings.char[info[#info]];
+    return OnyBagMate.store.char[info[#info]];
 end
 
 local function set(info, value)
-    OnyBagMate.settings.char[info[#info]] = value;
+    OnyBagMate.store.char[info[#info]] = value;
 end
 
 OnyBagMate.messages = {
+    scanEvent = 'OnyBagMateScan',
+    bonusEvent = 'OnyBagMateBonus',
     prefix = 'OnyBagMate',
     demandScan = 'scan bags',
     raid = 'RAID',
+    guild = 'GUILD',
     whisper = 'WHISPER',
-};
-
-OnyBagMate.UI = {
-    frame = nil,
-    list = nil,
+    answer = '(.+)#(%d+)'
 };
 
 OnyBagMate.state = {
+    name = '',
     pass = nil,
     list = {},
 };
@@ -35,7 +34,11 @@ OnyBagMate.state = {
 OnyBagMate.defaults = {
     char = {
         rank = '',
-        bonus = '',
+        bonusEnable = true,
+        bonusPoints = '5',
+        bonuses = {},
+        lastBonus = '',
+        bonusKeeper = '',
     },
 };
 
@@ -47,25 +50,49 @@ OnyBagMate.options = {
         rank = {
             type = 'input',
             order = 1,
-            name = 'Rank # and above',
+            name = L['Rank # and above'],
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
-        header1 = {
+        bonusHeader = {
             type = 'header',
             order = 10,
+            name = L['Bonuses'],
         },
-        bonus = {
-            type = 'input',
+        bonusEnable = {
+            type = 'toggle',
             order = 20,
-            name = 'Roll bonus per Onyxia kill',
+            name = L['Enable bonuses'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
+        bonusPoints = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            type = 'input',
+            order = 30,
+            name = L['Roll bonus per Onyxia kill'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
+        importBonuses = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            type = 'execute',
+            order = 40,
+            name = L['Import csv'],
+            func = function() OnyBagMate.AttendanceFrame:Render(); end,
+        },
+        bonusKeeper = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            type = 'input',
+            order = 50,
+            name = L['Bonus Keeper'],
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
     },
 };
 
-OnyBagMate.settings = {};
+OnyBagMate.store = {};
 
 function OnyBagMate:HandleChatCommand(input)
     if (input == nil) then
@@ -77,7 +104,7 @@ function OnyBagMate:HandleChatCommand(input)
     if arg == 'opts' then
         AceConfigDialog:Open('Options');
     elseif arg == 'open' then
-        self:Render();
+        self.RollFrame:Render();
     end
 end
 
@@ -85,80 +112,14 @@ function OnyBagMate:OnInitialize()
     self:RegisterChatCommand('onybm', 'HandleChatCommand');
 
     AceConfig:RegisterOptionsTable('Options', self.options);
-    self.settings = AceDB:New('OnyBagMateSettings', self.defaults, true);
+    self.store = AceDB:New('OnyBagMateStore', self.defaults, true);
 
-    self:RegisterComm(self.messages.prefix);
+    self:RegisterComm(self.messages.scanEvent, 'handleScanEvent');
+    self:RegisterComm(self.messages.bonusEvent, 'handleBonusEvent');
+
+    self.state.name = GetUnitName('player', false);
 
     self:ClearList();
-end
-
-function OnyBagMate:Render()
-    self:RegisterEvent('CHAT_MSG_SYSTEM');
-
-    self.UI.frame = AceGUI:Create('Frame');
-    self.UI.frame:SetTitle('Onixia Bag Mate');
-    self.UI.frame:SetLayout('List');
-    self.UI.frame:SetCallback('OnClose', function(widget) self:UnregisterEvent('CHAT_MSG_SYSTEM'); AceGUI:Release(widget); end)
-
-    local clear = AceGUI:Create('Button');
-    clear:SetText('Clear');
-    clear:SetFullWidth(true);
-    clear:SetCallback('OnClick', function() self:ClearList(); self:RenderList(); end);
-
-    self.UI.frame:AddChild(clear);
-
-    local group = AceGUI:Create('SimpleGroup');
-    group:SetFullWidth(true);
-    group:SetFullHeight(true);
-    group:SetLayout('Fill');
-
-    self.UI.list = AceGUI:Create('ScrollFrame');
-    self.UI.list:SetFullWidth(true);
-    self.UI.list:SetFullHeight(true);
-    self.UI.list:SetLayout('List');
-
-    group:AddChild(self.UI.list);
-
-    self.UI.frame:AddChild(group);
-    group:SetPoint('BOTTOM', 0, 5);
-
-    self:DemandScan();
-
-    self.UI.frame:SetStatusText(L['Frame status'](self.state.pass));
-end
-
-function OnyBagMate:RenderList()
-    self.UI.list:ReleaseChildren();
-
-    local renderItem = function(item)
-        local row = AceGUI:Create('SimpleGroup');
-        row:SetFullWidth(true);
-        row:SetLayout('Flow');
-
-        local name = AceGUI:Create('Label');
-        name:SetText(item.name);
-        row:AddChild(name);
-
-        local roll = AceGUI:Create('Label');
-        roll:SetText(item.roll);
-        row:AddChild(roll);
-
-        self.UI.list:AddChild(row);
-    end
-
-    local result = {};
-
-    for _, v in ipairs(self.state.list) do
-        if (v.bags <= self.state.pass) then
-            tinsert(result, { name = v.name, roll = v.roll });
-        end
-    end
-
-    sort(result, function(a, b) return (a.roll or 0) > (b.roll or 0) end);
-
-    for _, v in ipairs(result) do
-        renderItem(v);
-    end
 end
 
 function OnyBagMate:ScanPlayer()
@@ -166,7 +127,7 @@ function OnyBagMate:ScanPlayer()
 
     for i = 0, NUM_BAG_SLOTS do
         local bagName = GetBagName(i);
---        print('bag name: ' .. bagName);
+        --        print('bag name: ' .. bagName);
 
         if bagName == L['Onyxia Hide Backpack'] then
             bags = bags + 1;
@@ -177,22 +138,60 @@ function OnyBagMate:ScanPlayer()
 end
 
 function OnyBagMate:DemandScan()
---    print('send demand');
-    self:SendCommMessage(self.messages.prefix, self.messages.demandScan, self.messages.raid);
+    --    print('send demand');
+    self:SendCommMessage(self.messages.scanEvent, self.messages.demandScan, self.messages.raid);
 end
 
-function OnyBagMate:OnCommReceived(_, message, _, sender)
+function OnyBagMate:handleScanEvent(_, message, _, sender)
     if message == self.messages.demandScan then
---        print('received demand from: ' .. sender);
+        --        print('received demand from: ' .. sender);
         local bags = self.ScanPlayer();
 
-        self:SendCommMessage(self.messages.prefix, tostring(bags), self.messages.whisper, sender);
-    elseif tonumber(message) then
-        local item = { name = sender, bags = tonumber(message) };
---        print('received answer from: ' .. item.name .. ' - ' .. item.bags);
-        self:UpdateList(item);
-        self:UpdatePass(item);
+        local _, class = UnitClass("player");
+
+        self:SendCommMessage(self.messages.scanEvent, class .. '#' .. tostring(bags), self.messages.whisper, sender);
+    else
+        local class, bags = string.match(message, self.messages.answer);
+        --        print('class = ' .. class .. ' bags = ' .. bags .. ' name = ' .. sender);
+
+        if class and bags then
+            local item = { name = sender, class = class, bags = tonumber(bags) };
+            --        print('received answer from: ' .. item.name .. ' - ' .. item.bags);
+            self:UpdateList(item);
+            self:UpdatePass(item);
+
+            self.RollFrame:RenderList();
+        end
     end
+end
+
+function OnyBagMate:SyncBonuses()
+    if self.state.name ~= self.store.char.bonusKeeper then
+        return;
+    end
+
+    local data = AceSerializer:Serialize(self.store.char.bonuses, self.store.char.lastBonus);
+
+    self:SendCommMessage(self.messages.bonusEvent, data, self.messages.guild);
+end
+
+function OnyBagMate:handleBonusEvent(_, message, _, sender)
+    if sender == self.state.name then
+        return;
+    end
+
+    if sender ~= self.store.char.bonusKeeper then
+        return;
+    end
+
+    local success, bonuses, lastBonus = AceSerializer:Deserialize(message);
+
+    if not success then
+        return;
+    end
+
+    self.store.char.bonuses = bonuses;
+    self.store.char.lastBonus = lastBonus;
 end
 
 function OnyBagMate:ClearList()
@@ -207,7 +206,9 @@ function OnyBagMate:UpdateList(item)
 
     for _, v in ipairs(result) do
         if v.name == item.name then
+            v.class = item.class;
             v.bags = item.bags;
+
             found = true;
         end
     end
@@ -219,7 +220,7 @@ function OnyBagMate:UpdateList(item)
     sort(result, function(a, b) return a.name < b.name end);
 
     self.state.list = result;
---    print(#self.state.list);
+    --    print(#self.state.list);
 end
 
 function OnyBagMate:UpdatePass(item)
@@ -233,7 +234,7 @@ function OnyBagMate:UpdatePass(item)
 
     self.state.pass = pass;
 
-    self.UI.frame:SetStatusText(L['Frame status'](self.state.pass));
+    self.RollFrame:UpdateStatus(self.state.pass);
     --    print(self.state.pass);
 end
 
@@ -259,9 +260,9 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     max = tonumber(max);
 
     if (name and roll and min == 1 and max == 100) then
---        print('roll!');
+        --        print('roll!');
         self:RollList({ name = name, roll = roll });
 
-        self:RenderList();
+        self.RollFrame:RenderList();
     end
 end
