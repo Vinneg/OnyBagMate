@@ -18,7 +18,6 @@ OnyBagMate.messages = {
     demandScan = 'scan bags',
     raid = 'RAID',
     whisper = 'WHISPER',
-    whisper = 'WHISPER',
     answer = '(.+)#(%d+)'
 };
 
