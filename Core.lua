@@ -166,6 +166,10 @@ function OnyBagMate:handleScanEvent(_, message, _, sender)
 end
 
 function OnyBagMate:SyncBonuses()
+    if self.state.name ~= self.store.char.bonusKeeper then
+        return;
+    end
+
     local data = AceSerializer:Serialize(self.store.char.bonuses, self.store.char.lastBonus);
 
     self:SendCommMessage(self.messages.bonusEvent, data, self.messages.guild);
