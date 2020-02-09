@@ -30,6 +30,7 @@ OnyBagMate.state = {
 OnyBagMate.defaults = {
     char = {
         rank = '',
+        enableBonuses = true,
         bonus = '5',
         bonuses = {},
         lastBonus = '',
@@ -53,16 +54,25 @@ OnyBagMate.options = {
             order = 10,
             name = '',
         },
-        bonus = {
-            type = 'input',
+        enableBonuses = {
+            type = 'toggle',
             order = 20,
+            name = L['Enable bonuses'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
+        bonus = {
+            hidden = function() return OnyBagMate.store.char.enableBonuses or false; end,
+            type = 'input',
+            order = 30,
             name = L['Roll bonus per Onyxia kill'],
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
-        import = {
+        importBonuses = {
+            hidden = function() return OnyBagMate.store.char.enableBonuses or false; end,
             type = 'execute',
-            order = 30,
+            order = 40,
             name = L['Import csv'],
             func  = function() OnyBagMate.AttendanceFrame:Render(); end,
         },

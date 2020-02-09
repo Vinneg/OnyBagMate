@@ -76,7 +76,7 @@ function OnyBagMate.RollFrame:RenderList()
         elseif class == 'WARLOCK' then
             return 0.53, 0.53, 0.93;
         elseif class == 'WARRIOR' then
-            return 0.78, 0.61,  0.43;
+            return 0.78, 0.61, 0.43;
         end
     end
 
@@ -97,7 +97,10 @@ function OnyBagMate.RollFrame:RenderList()
         name:SetFullHeight(true);
         row:AddChild(name);
 
-        local rollTotal = '' .. ((item.roll or 0) + (item.bonus or 0)) .. ' (' .. (item.roll or 0) .. 'roll + ' .. (item.bonus or 0) .. 'bonus)';
+        local rollTotal = (item.roll or 0);
+        if OnyBagMate.store.char.enableBonuses or false then
+            rollTotal = '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. 'roll + ' .. (item.bonus or 0) .. 'bonus)';
+        end
 
         local roll = AceGUI:Create('Label');
         roll:SetFont(df, 18, 'OUTLINE');
@@ -111,11 +114,18 @@ function OnyBagMate.RollFrame:RenderList()
 
     for _, v in ipairs(OnyBagMate.state.list) do
         if (v.bags <= OnyBagMate.state.pass) then
-            tinsert(result, { name = v.name, class = v.class, roll = v.roll, bonus = OnyBagMate.store.char.bonuses[v.name] or 0});
+            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate.store.char.bonuses[v.name] or 0 };
+            if OnyBagMate.store.char.enableBonuses or false then
+                tmp.total = tmp.roll + tmp.bonus;
+            else
+                tmp.total = tmp.roll;
+            end
+
+            tinsert(result, tmp);
         end
     end
 
-    sort(result, function(a, b) return (a.roll or 0) > (b.roll or 0) end);
+    sort(result, function(a, b) return (a.total or 0) > (b.total or 0) end);
 
     for _, v in ipairs(result) do
         renderItem(v);
