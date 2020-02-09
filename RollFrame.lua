@@ -45,6 +45,7 @@ function OnyBagMate.RollFrame:Render()
     group:AddChild(self.list);
 
     OnyBagMate:DemandScan();
+    OnyBagMate:SyncBonuses();
 
     self:UpdateStatus(OnyBagMate.state.pass);
 end
@@ -98,7 +99,7 @@ function OnyBagMate.RollFrame:RenderList()
         row:AddChild(name);
 
         local rollTotal = (item.roll or 0);
-        if OnyBagMate.store.char.enableBonuses or false then
+        if OnyBagMate.store.char.bonusEnable or false then
             rollTotal = '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. 'roll + ' .. (item.bonus or 0) .. 'bonus)';
         end
 
@@ -115,7 +116,7 @@ function OnyBagMate.RollFrame:RenderList()
     for _, v in ipairs(OnyBagMate.state.list) do
         if (v.bags <= OnyBagMate.state.pass) then
             local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate.store.char.bonuses[v.name] or 0 };
-            if OnyBagMate.store.char.enableBonuses or false then
+            if OnyBagMate.store.char.bonusEnable or false then
                 tmp.total = tmp.roll + tmp.bonus;
             else
                 tmp.total = tmp.roll;

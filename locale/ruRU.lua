@@ -13,3 +13,4 @@ L['Enable bonuses'] = 'Использовать бонусы';
 L['Roll bonus per Onyxia kill'] = 'Бонус к роллу за убийство Ониксии';
 L['Import csv'] = 'Импорт csv';
 L['CSV data'] = 'CSV данные';
+L['Bonus Keeper'] = 'Хранитель бонусов';

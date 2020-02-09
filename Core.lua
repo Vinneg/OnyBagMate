@@ -3,6 +3,7 @@ OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'A
 local AceConfig = LibStub('AceConfig-3.0');
 local AceConfigDialog = LibStub('AceConfigDialog-3.0');
 local AceDB = LibStub('AceDB-3.0');
+local AceSerializer = LibStub('AceSerializer-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 
 local function get(info)
@@ -14,14 +15,18 @@ local function set(info, value)
 end
 
 OnyBagMate.messages = {
+    scanEvent = 'OnyBagMateScan',
+    bonusEvent = 'OnyBagMateBonus',
     prefix = 'OnyBagMate',
     demandScan = 'scan bags',
     raid = 'RAID',
+    guild = 'GUILD',
     whisper = 'WHISPER',
     answer = '(.+)#(%d+)'
 };
 
 OnyBagMate.state = {
+    name = '',
     pass = nil,
     list = {},
 };
@@ -29,10 +34,11 @@ OnyBagMate.state = {
 OnyBagMate.defaults = {
     char = {
         rank = '',
-        enableBonuses = true,
-        bonus = '5',
+        bonusEnable = true,
+        bonusPoints = '5',
         bonuses = {},
         lastBonus = '',
+        bonusKeeper = '',
     },
 };
 
@@ -48,20 +54,20 @@ OnyBagMate.options = {
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
-        header1 = {
+        bonusHeader = {
             type = 'header',
             order = 10,
             name = L['Bonuses'],
         },
-        enableBonuses = {
+        bonusEnable = {
             type = 'toggle',
             order = 20,
             name = L['Enable bonuses'],
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
-        bonus = {
-            hidden = function() return not (OnyBagMate.store.char.enableBonuses or false); end,
+        bonusPoints = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
             type = 'input',
             order = 30,
             name = L['Roll bonus per Onyxia kill'],
@@ -69,11 +75,19 @@ OnyBagMate.options = {
             set = function(info, value) set(info, value); end,
         },
         importBonuses = {
-            hidden = function() return not (OnyBagMate.store.char.enableBonuses or false); end,
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
             type = 'execute',
             order = 40,
             name = L['Import csv'],
-            func  = function() OnyBagMate.AttendanceFrame:Render(); end,
+            func = function() OnyBagMate.AttendanceFrame:Render(); end,
+        },
+        bonusKeeper = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            type = 'input',
+            order = 50,
+            name = L['Bonus Keeper'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
         },
     },
 };
@@ -100,7 +114,10 @@ function OnyBagMate:OnInitialize()
     AceConfig:RegisterOptionsTable('Options', self.options);
     self.store = AceDB:New('OnyBagMateStore', self.defaults, true);
 
-    self:RegisterComm(self.messages.prefix);
+    self:RegisterComm(self.messages.scanEvent, 'handleScanEvent');
+    self:RegisterComm(self.messages.bonusEvent, 'handleBonusEvent');
+
+    self.state.name = GetUnitName('player', false);
 
     self:ClearList();
 end
@@ -122,20 +139,20 @@ end
 
 function OnyBagMate:DemandScan()
     --    print('send demand');
-    self:SendCommMessage(self.messages.prefix, self.messages.demandScan, self.messages.raid);
+    self:SendCommMessage(self.messages.scanEvent, self.messages.demandScan, self.messages.raid);
 end
 
-function OnyBagMate:OnCommReceived(_, message, _, sender)
+function OnyBagMate:handleScanEvent(_, message, _, sender)
     if message == self.messages.demandScan then
         --        print('received demand from: ' .. sender);
         local bags = self.ScanPlayer();
 
         local _, class = UnitClass("player");
 
-        self:SendCommMessage(self.messages.prefix, class .. '#' .. tostring(bags), self.messages.whisper, sender);
+        self:SendCommMessage(self.messages.scanEvent, class .. '#' .. tostring(bags), self.messages.whisper, sender);
     else
         local class, bags = string.match(message, self.messages.answer);
---        print('class = ' .. class .. ' bags = ' .. bags .. ' name = ' .. sender);
+        --        print('class = ' .. class .. ' bags = ' .. bags .. ' name = ' .. sender);
 
         if class and bags then
             local item = { name = sender, class = class, bags = tonumber(bags) };
@@ -146,6 +163,31 @@ function OnyBagMate:OnCommReceived(_, message, _, sender)
             self.RollFrame:RenderList();
         end
     end
+end
+
+function OnyBagMate:SyncBonuses()
+    local data = AceSerializer:Serialize(self.store.char.bonuses, self.store.char.lastBonus);
+
+    self:SendCommMessage(self.messages.bonusEvent, data, self.messages.guild);
+end
+
+function OnyBagMate:handleBonusEvent(_, message, _, sender)
+    if sender == self.state.name then
+        return;
+    end
+
+    if sender ~= self.store.char.bonusKeeper then
+        return;
+    end
+
+    local success, bonuses, lastBonus = AceSerializer:Deserialize(message);
+
+    if not success then
+        return;
+    end
+
+    self.store.char.bonuses = bonuses;
+    self.store.char.lastBonus = lastBonus;
 end
 
 function OnyBagMate:ClearList()

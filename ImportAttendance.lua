@@ -42,7 +42,7 @@ function OnyBagMate.AttendanceFrame:Render()
 end
 
 function OnyBagMate.AttendanceFrame:Import()
-    self.bonus = tonumber(OnyBagMate.store.char.bonus) or 1;
+    self.bonus = tonumber(OnyBagMate.store.char.bonusPoints) or 1;
     self.bonuses = {};
     self.lastBonus = '';
 
