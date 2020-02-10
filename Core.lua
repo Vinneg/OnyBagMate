@@ -14,6 +14,16 @@ local function set(info, value)
     OnyBagMate.store.char[info[#info]] = value;
 end
 
+local function getBanks()
+    local res = { -1 };
+
+    for i = 1, NUM_BANKBAGSLOTS do
+        tinsert(res, i + NUM_BAG_SLOTS);
+    end
+
+    return res;
+end
+
 OnyBagMate.messages = {
     scanEvent = 'OnyBagMateScan',
     bonusEvent = 'OnyBagMateBonus',
@@ -26,12 +36,13 @@ OnyBagMate.messages = {
 };
 
 OnyBagMate.state = {
+    version = 1.2,
     name = '',
     class = '',
     pass = nil,
     list = {},
     bagId = 17966,
-    version = 1.2,
+    bankBagIds = getBanks(),
 };
 
 OnyBagMate.defaults = {
@@ -42,6 +53,7 @@ OnyBagMate.defaults = {
         bonuses = {},
         lastBonus = '',
         bonusKeeper = '',
+        bankBags = 0,
     },
 };
 
@@ -127,6 +139,8 @@ function OnyBagMate:OnInitialize()
 
     self:ClearList();
 
+    OnyBagMate:RegisterEvent('BANKFRAME_CLOSED');
+
     self:ScheduleTimer('PrintVersion', 5);
 end
 
@@ -163,6 +177,42 @@ function OnyBagMate:ScanPlayer()
     return bags;
 end
 
+function OnyBagMate:ScanBank()
+    local bags = 0;
+
+    for _, i in ipairs(self.state.bankBagIds) do
+        local invID;
+
+        if i == -1 then
+            invID = BankButtonIDToInvSlotID(i, 1);
+        else
+            invID = ContainerIDToInventoryID(i);
+        end
+
+        local itemId = GetInventoryItemID("player", invID);
+
+        if itemId == self.state.bagId then
+            bags = bags + 1;
+        end
+
+        local slots = GetContainerNumSlots(i);
+
+        if slots ~= 0 then
+            for j = 1, slots do
+                local itemId = GetContainerItemID(i, j);
+
+                if itemId == self.state.bagId then
+                    bags = bags + 1;
+                end
+            end
+        end
+    end
+
+    print(bags);
+
+    return bags;
+end
+
 function OnyBagMate:DemandScan()
     --    print('send demand');
     self:SendCommMessage(self.messages.scanEvent, self.messages.demandScan, self.messages.raid);
@@ -171,7 +221,7 @@ end
 function OnyBagMate:handleScanEvent(_, message, _, sender)
     if message == self.messages.demandScan then
         --        print('received demand from: ' .. sender);
-        local bags = self.ScanPlayer();
+        local bags = self.ScanPlayer() + (self.store.char.bankBags or 0);
 
         self:SendCommMessage(self.messages.scanEvent, self.state.class .. '#' .. tostring(bags), self.messages.whisper, sender);
     else
@@ -289,4 +339,8 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
 
         self.RollFrame:RenderList();
     end
+end
+
+function OnyBagMate:BANKFRAME_CLOSED()
+    self.store.char.bankBags = self:ScanBank();
 end
