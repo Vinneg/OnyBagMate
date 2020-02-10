@@ -94,7 +94,7 @@ function OnyBagMate.RollFrame:RenderList()
         name:SetFont(df, 18, 'OUTLINE');
         name:SetColor(classColor(item.class));
         name:SetText(item.name);
-        name:SetRelativeWidth(0.3);
+        name:SetRelativeWidth(0.4);
         name:SetFullHeight(true);
         row:AddChild(name);
 
@@ -106,7 +106,7 @@ function OnyBagMate.RollFrame:RenderList()
         local roll = AceGUI:Create('Label');
         roll:SetFont(df, 18, 'OUTLINE');
         roll:SetText(rollTotal);
-        roll:SetRelativeWidth(0.7);
+        roll:SetRelativeWidth(0.6);
         roll:SetFullHeight(true);
         row:AddChild(roll);
     end
