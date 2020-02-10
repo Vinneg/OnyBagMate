@@ -217,7 +217,7 @@ end
 
 function OnyBagMate:handleScanEvent(_, message, _, sender)
     if message == self.messages.demandScan then
-        local bags = self.ScanPlayer() + (self.store.char.bankBags or 0);
+        local bags = self:ScanPlayer() + (self.store.char.bankBags or 0);
 
         self:SendCommMessage(self.messages.scanEvent, self.state.class .. '#' .. tostring(bags), self.messages.whisper, sender);
     else
