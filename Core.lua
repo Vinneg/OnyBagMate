@@ -1,4 +1,4 @@
-OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'AceEvent-3.0', 'AceComm-3.0');
+OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'AceEvent-3.0', 'AceComm-3.0', 'AceTimer-3.0');
 
 local AceConfig = LibStub('AceConfig-3.0');
 local AceConfigDialog = LibStub('AceConfigDialog-3.0');
@@ -14,6 +14,16 @@ local function set(info, value)
     OnyBagMate.store.char[info[#info]] = value;
 end
 
+local function getBanks()
+    local res = { -1 };
+
+    for i = 1, NUM_BANKBAGSLOTS do
+        tinsert(res, i + NUM_BAG_SLOTS);
+    end
+
+    return res;
+end
+
 OnyBagMate.messages = {
     scanEvent = 'OnyBagMateScan',
     bonusEvent = 'OnyBagMateBonus',
@@ -26,10 +36,13 @@ OnyBagMate.messages = {
 };
 
 OnyBagMate.state = {
+    version = 1.2,
     name = '',
     class = '',
     pass = nil,
     list = {},
+    bagId = 17966,
+    bankBagIds = getBanks(),
 };
 
 OnyBagMate.defaults = {
@@ -40,6 +53,7 @@ OnyBagMate.defaults = {
         bonuses = {},
         lastBonus = '',
         bonusKeeper = '',
+        bankBags = 0,
     },
 };
 
@@ -102,7 +116,9 @@ function OnyBagMate:HandleChatCommand(input)
 
     local arg = strlower(input);
 
-    if arg == 'opts' then
+    if arg == 'test' then
+        OnyBagMate:ScanPlayer();
+    elseif arg == 'opts' then
         AceConfigDialog:Open('Options');
     elseif arg == 'open' then
         self.RollFrame:Render();
@@ -122,17 +138,73 @@ function OnyBagMate:OnInitialize()
     self.state.class = select(2, UnitClass("player"));
 
     self:ClearList();
+
+    self:RegisterEvent('BANKFRAME_CLOSED');
+
+    self:ScheduleTimer('PrintVersion', 5);
+end
+
+function OnyBagMate:PrintVersion()
+    print('|cFF00FAF6OnyBagMate loaded! Version: ' .. self.state.version .. '|r');
 end
 
 function OnyBagMate:ScanPlayer()
     local bags = 0;
 
     for i = 0, NUM_BAG_SLOTS do
-        local bagName = GetBagName(i);
-        --        print('bag name: ' .. bagName);
+        if i ~= 0 then
+            local invID = ContainerIDToInventoryID(i);
+            local itemId = GetInventoryItemID("player", invID);
 
-        if bagName == L['Onyxia Hide Backpack'] then
+            if itemId == self.state.bagId then
+                bags = bags + 1;
+            end
+        end
+
+        local slots = GetContainerNumSlots(i);
+
+        if slots ~= 0 then
+            for j = 1, slots do
+                local itemId = GetContainerItemID(i, j);
+
+                if itemId == self.state.bagId then
+                    bags = bags + 1;
+                end
+            end
+        end
+    end
+
+    return bags;
+end
+
+function OnyBagMate:ScanBank()
+    local bags = 0;
+
+    for _, i in ipairs(self.state.bankBagIds) do
+        local invID;
+
+        if i == -1 then
+            invID = BankButtonIDToInvSlotID(i, 1);
+        else
+            invID = ContainerIDToInventoryID(i);
+        end
+
+        local itemId = GetInventoryItemID("player", invID);
+
+        if itemId == self.state.bagId then
             bags = bags + 1;
+        end
+
+        local slots = GetContainerNumSlots(i);
+
+        if slots ~= 0 then
+            for j = 1, slots do
+                local itemId = GetContainerItemID(i, j);
+
+                if itemId == self.state.bagId then
+                    bags = bags + 1;
+                end
+            end
         end
     end
 
@@ -140,23 +212,20 @@ function OnyBagMate:ScanPlayer()
 end
 
 function OnyBagMate:DemandScan()
-    --    print('send demand');
     self:SendCommMessage(self.messages.scanEvent, self.messages.demandScan, self.messages.raid);
 end
 
 function OnyBagMate:handleScanEvent(_, message, _, sender)
     if message == self.messages.demandScan then
-        --        print('received demand from: ' .. sender);
-        local bags = self.ScanPlayer();
+        local bags = self:ScanPlayer() + (self.store.char.bankBags or 0);
 
         self:SendCommMessage(self.messages.scanEvent, self.state.class .. '#' .. tostring(bags), self.messages.whisper, sender);
     else
         local class, bags = string.match(message, self.messages.answer);
-        --        print('class = ' .. class .. ' bags = ' .. bags .. ' name = ' .. sender);
 
         if class and bags then
             local item = { name = sender, class = class, bags = tonumber(bags) };
-            --        print('received answer from: ' .. item.name .. ' - ' .. item.bags);
+
             self:UpdateList(item);
             self:UpdatePass(item);
 
@@ -220,7 +289,6 @@ function OnyBagMate:UpdateList(item)
     sort(result, function(a, b) return a.name < b.name end);
 
     self.state.list = result;
-    --    print(#self.state.list);
 end
 
 function OnyBagMate:UpdatePass(item)
@@ -235,7 +303,6 @@ function OnyBagMate:UpdatePass(item)
     self.state.pass = pass;
 
     self.RollFrame:UpdateStatus(self.state.pass);
-    --    print(self.state.pass);
 end
 
 function OnyBagMate:RollList(item)
@@ -260,9 +327,12 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     max = tonumber(max);
 
     if (name and roll and min == 1 and max == 100) then
-        --        print('roll!');
         self:RollList({ name = name, roll = roll });
 
         self.RollFrame:RenderList();
     end
+end
+
+function OnyBagMate:BANKFRAME_CLOSED()
+    self.store.char.bankBags = self:ScanBank();
 end
