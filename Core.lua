@@ -208,29 +208,24 @@ function OnyBagMate:ScanBank()
         end
     end
 
-    print(bags);
-
     return bags;
 end
 
 function OnyBagMate:DemandScan()
-    --    print('send demand');
     self:SendCommMessage(self.messages.scanEvent, self.messages.demandScan, self.messages.raid);
 end
 
 function OnyBagMate:handleScanEvent(_, message, _, sender)
     if message == self.messages.demandScan then
-        --        print('received demand from: ' .. sender);
         local bags = self.ScanPlayer() + (self.store.char.bankBags or 0);
 
         self:SendCommMessage(self.messages.scanEvent, self.state.class .. '#' .. tostring(bags), self.messages.whisper, sender);
     else
         local class, bags = string.match(message, self.messages.answer);
-        --        print('class = ' .. class .. ' bags = ' .. bags .. ' name = ' .. sender);
 
         if class and bags then
             local item = { name = sender, class = class, bags = tonumber(bags) };
-            --        print('received answer from: ' .. item.name .. ' - ' .. item.bags);
+
             self:UpdateList(item);
             self:UpdatePass(item);
 
@@ -294,7 +289,6 @@ function OnyBagMate:UpdateList(item)
     sort(result, function(a, b) return a.name < b.name end);
 
     self.state.list = result;
-    --    print(#self.state.list);
 end
 
 function OnyBagMate:UpdatePass(item)
@@ -309,7 +303,6 @@ function OnyBagMate:UpdatePass(item)
     self.state.pass = pass;
 
     self.RollFrame:UpdateStatus(self.state.pass);
-    --    print(self.state.pass);
 end
 
 function OnyBagMate:RollList(item)
@@ -334,7 +327,6 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     max = tonumber(max);
 
     if (name and roll and min == 1 and max == 100) then
-        --        print('roll!');
         self:RollList({ name = name, roll = roll });
 
         self.RollFrame:RenderList();
