@@ -139,7 +139,7 @@ function OnyBagMate:OnInitialize()
 
     self:ClearList();
 
-    OnyBagMate:RegisterEvent('BANKFRAME_CLOSED');
+    self:RegisterEvent('BANKFRAME_CLOSED');
 
     self:ScheduleTimer('PrintVersion', 5);
 end
