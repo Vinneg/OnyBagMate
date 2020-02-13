@@ -36,7 +36,7 @@ OnyBagMate.messages = {
 };
 
 OnyBagMate.state = {
-    version = 1.2,
+    version = 1.3,
     name = '',
     class = '',
     pass = nil,
@@ -140,6 +140,8 @@ function OnyBagMate:OnInitialize()
     self:ClearList();
 
     self:RegisterEvent('BANKFRAME_CLOSED');
+    self:RegisterEvent('ENCOUNTER_START');
+    self:RegisterEvent('ENCOUNTER_END');
 
     self:ScheduleTimer('PrintVersion', 5);
 end
@@ -335,4 +337,12 @@ end
 
 function OnyBagMate:BANKFRAME_CLOSED()
     self.store.char.bankBags = self:ScanBank();
+end
+
+function OnyBagMate:ENCOUNTER_START(_, id, name, difficulty, groupSize)
+    print('ENCOUNTER_END: id = ',id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
+end
+
+function OnyBagMate:ENCOUNTER_END(_, id, name, difficulty, groupSize, success)
+    print('ENCOUNTER_END: id = ',id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
 end
