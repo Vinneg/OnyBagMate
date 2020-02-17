@@ -26,7 +26,6 @@ end
 
 OnyBagMate.messages = {
     scanEvent = 'OnyBagMateScan',
-    bonusEvent = 'OnyBagMateBonus',
     prefix = 'OnyBagMate',
     demandScan = 'scan bags',
     raid = 'RAID',
@@ -50,10 +49,9 @@ OnyBagMate.defaults = {
         rank = '',
         bonusEnable = true,
         bonusPoints = '5',
-        bonuses = {},
         lastBonus = '',
-        bonusKeeper = '',
         bankBags = 0,
+        guild = {},
     },
 };
 
@@ -96,14 +94,6 @@ OnyBagMate.options = {
             name = L['Import csv'],
             func = function() OnyBagMate.AttendanceFrame:Render(); end,
         },
-        bonusKeeper = {
-            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
-            type = 'input',
-            order = 50,
-            name = L['Bonus Keeper'],
-            get = function(info) return get(info); end,
-            set = function(info, value) set(info, value); end,
-        },
     },
 };
 
@@ -119,7 +109,7 @@ function OnyBagMate:HandleChatCommand(input)
     if arg == 'test' then
         OnyBagMate:ScanPlayer();
     elseif arg == 'opts' then
-        AceConfigDialog:Open('Options');
+        AceConfigDialog:Open('OnyBagMateOptions');
     elseif arg == 'open' then
         self.RollFrame:Render();
     end
@@ -128,11 +118,10 @@ end
 function OnyBagMate:OnInitialize()
     self:RegisterChatCommand('onybm', 'HandleChatCommand');
 
-    AceConfig:RegisterOptionsTable('Options', self.options);
+    AceConfig:RegisterOptionsTable('OnyBagMateOptions', self.options);
     self.store = AceDB:New('OnyBagMateStore', self.defaults, true);
 
     self:RegisterComm(self.messages.scanEvent, 'handleScanEvent');
-    self:RegisterComm(self.messages.bonusEvent, 'handleBonusEvent');
 
     self.state.name = GetUnitName('player', false);
     self.state.class = select(2, UnitClass("player"));
@@ -236,35 +225,6 @@ function OnyBagMate:handleScanEvent(_, message, _, sender)
     end
 end
 
-function OnyBagMate:SyncBonuses()
-    if self.state.name ~= self.store.char.bonusKeeper then
-        return;
-    end
-
-    local data = AceSerializer:Serialize(self.store.char.bonuses, self.store.char.lastBonus);
-
-    self:SendCommMessage(self.messages.bonusEvent, data, self.messages.guild);
-end
-
-function OnyBagMate:handleBonusEvent(_, message, _, sender)
-    if sender == self.state.name then
-        return;
-    end
-
-    if sender ~= self.store.char.bonusKeeper then
-        return;
-    end
-
-    local success, bonuses, lastBonus = AceSerializer:Deserialize(message);
-
-    if not success then
-        return;
-    end
-
-    self.store.char.bonuses = bonuses;
-    self.store.char.lastBonus = lastBonus;
-end
-
 function OnyBagMate:ClearList()
     for _, v in ipairs(self.state.list) do
         v.roll = 0;
@@ -321,6 +281,54 @@ function OnyBagMate:RollList(item)
     self.state.list = result;
 end
 
+function OnyBagMate:GetBonusBase(player)
+    C_GuildInfo.GuildRoster();
+
+    if not IsInGuild() then
+        return 0;
+    end
+
+    local ttlMembers = GetNumGuildMembers();
+
+    for i = 1, ttlMembers do
+        local name, _, _, _, _, _, _, offNote = GetGuildRosterInfo(i);
+
+        if name == player then
+            local bonus = string.match(offNote,'obm{(-?%d+%.?%d*)}');
+
+            return bonus;
+        end
+    end
+end
+
+function OnyBagMate:SetBonusBase(player, bonus)
+    C_GuildInfo.GuildRoster();
+
+    if not IsInGuild() then
+        return 0;
+    end
+
+    local ttlMembers = GetNumGuildMembers();
+
+    local newBonus = 'obm{' .. (tonumber(bonus) or 0) .. '}';
+
+    for i = 1, ttlMembers do
+        local name, _, _, _, _, _, _, offNote = GetGuildRosterInfo(i);
+
+        if name == player then
+            local newOffNote, subs = string.gsub(offNote, 'obm{[^}]*}', newBonus);
+
+            if subs == 0 then
+                newOffNote = (offNote .. ' ' .. newBonus);
+            end
+
+            GuildRosterSetOfficerNote(i, newOffNote);
+
+            return;
+        end
+    end
+end
+
 function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     local name, roll, min, max = string.match(message, L['Roll regexp']);
 
@@ -340,9 +348,9 @@ function OnyBagMate:BANKFRAME_CLOSED()
 end
 
 function OnyBagMate:ENCOUNTER_START(_, id, name, difficulty, groupSize)
-    print('ENCOUNTER_END: id = ',id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
+    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
 end
 
 function OnyBagMate:ENCOUNTER_END(_, id, name, difficulty, groupSize, success)
-    print('ENCOUNTER_END: id = ',id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
+    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
 end

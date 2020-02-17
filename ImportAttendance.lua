@@ -6,7 +6,6 @@ local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 OnyBagMate.AttendanceFrame = {
     frame = nil,
     text = nil,
-    bonus = '',
     bonuses = {},
     lastBonus = '',
     lastRaid = 3,
@@ -42,14 +41,15 @@ function OnyBagMate.AttendanceFrame:Render()
 end
 
 function OnyBagMate.AttendanceFrame:Import()
-    self.bonus = tonumber(OnyBagMate.store.char.bonusPoints) or 1;
     self.bonuses = {};
     self.lastBonus = '';
 
     string.gsub(self.text:GetText(), '[^\r\n]+', function(item) self:ParseLine(item) end);
 
     for i, v in pairs(self.bonuses) do
-        OnyBagMate.store.char.bonuses[i] = (OnyBagMate.store.char.bonuses[i] or 0) + v;
+        local oldBonus = OnyBagMate:GetBonusBase(i);
+
+        OnyBagMate:SetBonusBase(i, (oldBonus or 0) + v);
     end
 
     OnyBagMate.store.char.lastBonus = self.lastBonus;
@@ -96,7 +96,7 @@ function OnyBagMate.AttendanceFrame:HandleLine(line)
     local res = 0;
 
     for i = self.firstRaid, self.lastRaid do
-        res = res + (tonumber(line[i]) or 0) * self.bonus;
+        res = res + (tonumber(line[i]) or 0);
     end
 
     self.bonuses[line[1]] = res;
