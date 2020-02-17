@@ -11,5 +11,6 @@ L['Bonuses'] = true;
 L['Enable bonuses'] = true;
 L['Roll bonus per Onyxia kill'] = true;
 L['Import csv'] = true;
+L['Clear bonuses'] = true;
 L['CSV data'] = true;
 L['Bonus Keeper'] = true;

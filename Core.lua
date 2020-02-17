@@ -3,7 +3,6 @@ OnyBagMate = LibStub('AceAddon-3.0'):NewAddon('OnyBagMate', 'AceConsole-3.0', 'A
 local AceConfig = LibStub('AceConfig-3.0');
 local AceConfigDialog = LibStub('AceConfigDialog-3.0');
 local AceDB = LibStub('AceDB-3.0');
-local AceSerializer = LibStub('AceSerializer-3.0');
 local L = LibStub('AceLocale-3.0'):GetLocale('OnyBagMate');
 
 local function get(info)
@@ -29,12 +28,14 @@ local function getGuildInfo(player)
         return nil;
     end
 
-    C_GuildInfo.GuildRoster();
+    --    C_GuildInfo.GuildRoster();
 
     local ttlMembers = GetNumGuildMembers();
 
     for i = 1, ttlMembers do
         local name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
+
+        name = Ambiguate(name, 'all');
 
         if name == player then
             return i, name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID;
@@ -111,6 +112,13 @@ OnyBagMate.options = {
             order = 40,
             name = L['Import csv'],
             func = function() OnyBagMate.AttendanceFrame:Render(); end,
+        },
+        clearBonuses = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            type = 'execute',
+            order = 50,
+            name = L['Clear bonuses'],
+            func = function() OnyBagMate:ClearBonuses(); end,
         },
     },
 };
@@ -312,7 +320,7 @@ function OnyBagMate:GetBonusBase(player)
 end
 
 function OnyBagMate:SetBonusBase(player, bonus)
-    local offNote = select(9, getGuildInfo(player));
+    local i, _, _, _, _, _, _, _, offNote = getGuildInfo(player);
 
     if offNote == nil then
         return 0;
@@ -327,6 +335,26 @@ function OnyBagMate:SetBonusBase(player, bonus)
     end
 
     GuildRosterSetOfficerNote(i, newOffNote);
+end
+
+function OnyBagMate:ClearBonuses()
+    if not IsInGuild() then
+        return nil;
+    end
+
+    local ttlMembers = GetNumGuildMembers();
+
+    for i = 1, ttlMembers do
+        local offNote = select(8, GetGuildRosterInfo(i));
+
+        local newOffNote, subs = string.gsub(offNote, 'obm{[^}]*}', '');
+
+        if subs ~= 0 then
+            GuildRosterSetOfficerNote(i, newOffNote);
+        end
+    end
+
+    OnyBagMate.store.char.lastBonus = '';
 end
 
 function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
