@@ -24,6 +24,24 @@ local function getBanks()
     return res;
 end
 
+local function getGuildInfo(player)
+    if not IsInGuild() then
+        return nil;
+    end
+
+    C_GuildInfo.GuildRoster();
+
+    local ttlMembers = GetNumGuildMembers();
+
+    for i = 1, ttlMembers do
+        local name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID = GetGuildRosterInfo(i);
+
+        if name == player then
+            return i, name, rankName, rankIndex, level, classDisplayName, zone, publicNote, officerNote, isOnline, status, class, achievementPoints, achievementRank, isMobile, canSoR, repStanding, GUID;
+        end
+    end
+end
+
 OnyBagMate.messages = {
     scanEvent = 'OnyBagMateScan',
     prefix = 'OnyBagMate',
@@ -282,51 +300,33 @@ function OnyBagMate:RollList(item)
 end
 
 function OnyBagMate:GetBonusBase(player)
-    C_GuildInfo.GuildRoster();
+    local offNote = select(9, getGuildInfo(player));
 
-    if not IsInGuild() then
+    if offNote == nil then
         return 0;
     end
 
-    local ttlMembers = GetNumGuildMembers();
+    local bonus = string.match(offNote, 'obm{(-?%d+%.?%d*)}');
 
-    for i = 1, ttlMembers do
-        local name, _, _, _, _, _, _, offNote = GetGuildRosterInfo(i);
-
-        if name == player then
-            local bonus = string.match(offNote,'obm{(-?%d+%.?%d*)}');
-
-            return bonus;
-        end
-    end
+    return tonumber(bonus) or 0;
 end
 
 function OnyBagMate:SetBonusBase(player, bonus)
-    C_GuildInfo.GuildRoster();
+    local offNote = select(9, getGuildInfo(player));
 
-    if not IsInGuild() then
+    if offNote == nil then
         return 0;
     end
 
-    local ttlMembers = GetNumGuildMembers();
-
     local newBonus = 'obm{' .. (tonumber(bonus) or 0) .. '}';
 
-    for i = 1, ttlMembers do
-        local name, _, _, _, _, _, _, offNote = GetGuildRosterInfo(i);
+    local newOffNote, subs = string.gsub(offNote, 'obm{[^}]*}', newBonus);
 
-        if name == player then
-            local newOffNote, subs = string.gsub(offNote, 'obm{[^}]*}', newBonus);
-
-            if subs == 0 then
-                newOffNote = (offNote .. ' ' .. newBonus);
-            end
-
-            GuildRosterSetOfficerNote(i, newOffNote);
-
-            return;
-        end
+    if subs == 0 then
+        newOffNote = (offNote .. newBonus);
     end
+
+    GuildRosterSetOfficerNote(i, newOffNote);
 end
 
 function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
