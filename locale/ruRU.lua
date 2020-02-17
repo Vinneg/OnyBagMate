@@ -3,6 +3,7 @@ local L = LibStub('AceLocale-3.0'):NewLocale('OnyBagMate', 'ruRU');
 -- Core.lua
 L['Onyxia Bag Mate'] = true;
 L['Clear'] = 'Очистить';
+L['Roll'] = true;
 L['Onyxia'] = 'Ониксия';
 L['Roll regexp'] = '(.+) выбрасывает (%d+) %((%d+)-(%d+)%)';
 L['Frame status'] = function(count) return 'Минимальное кол-во сумок: ' .. (count or 0) end;
