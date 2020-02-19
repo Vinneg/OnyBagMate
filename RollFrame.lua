@@ -17,13 +17,21 @@ function OnyBagMate.RollFrame:Render()
     self.frame:SetLayout(nil);
     self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); OnyBagMate:ClearList(); AceGUI:Release(widget); end)
 
+    local roll = AceGUI:Create('Button');
+    roll:SetText(L['Roll']);
+    roll:SetFullWidth(true);
+    roll:SetCallback('OnClick', function() RandomRoll(1, 100); end);
+
+    self.frame:AddChild(roll);
+
     local clear = AceGUI:Create('Button');
     clear:SetText(L['Clear']);
     clear:SetFullWidth(true);
     clear:SetCallback('OnClick', function() OnyBagMate:ClearList(); self:RenderList(); end);
 
     self.frame:AddChild(clear);
-    clear:SetPoint('TOPLEFT', 0, 5);
+
+    roll:SetPoint('TOPLEFT', 0, 5);
     clear:SetPoint('TOPRIGHT', 0, 5);
 
     local group = AceGUI:Create('SimpleGroup');
@@ -32,8 +40,8 @@ function OnyBagMate.RollFrame:Render()
     group:SetLayout('Fill');
 
     self.frame:AddChild(group);
-    group:SetPoint('TOP', clear.frame, 'BOTTOM', 0, -5);
-    group:SetPoint('LEFT', clear.frame, 'LEFT', 0, 5);
+    group:SetPoint('TOPLEFT', roll.frame, 'BOTTOMLEFT', 0, -5);
+    group:SetPoint('TOPRIGHT', clear.frame, 'BOTTOMRIGHT', 0, 5);
     group:SetPoint('RIGHT', clear.frame, 'RIGHT', 0, 5);
     group:SetPoint('BOTTOM', self.frame.frame, 'BOTTOM', 0, 50);
 
@@ -45,7 +53,6 @@ function OnyBagMate.RollFrame:Render()
     group:AddChild(self.list);
 
     OnyBagMate:DemandScan();
-    OnyBagMate:SyncBonuses();
 
     self:UpdateStatus(OnyBagMate.state.pass);
 end
@@ -115,7 +122,7 @@ function OnyBagMate.RollFrame:RenderList()
 
     for _, v in ipairs(OnyBagMate.state.list) do
         if (v.bags <= OnyBagMate.state.pass) then
-            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate.store.char.bonuses[v.name] or 0 };
+            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name) };
             if OnyBagMate.store.char.bonusEnable or false then
                 tmp.total = tmp.roll + tmp.bonus;
             else
