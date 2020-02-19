@@ -377,9 +377,9 @@ function OnyBagMate:BANKFRAME_CLOSED()
 end
 
 function OnyBagMate:ENCOUNTER_START(_, id, name, difficulty, groupSize)
-    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
+--    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
 end
 
 function OnyBagMate:ENCOUNTER_END(_, id, name, difficulty, groupSize, success)
-    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
+--    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
 end
