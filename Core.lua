@@ -54,7 +54,6 @@ OnyBagMate.messages = {
 };
 
 OnyBagMate.state = {
-    version = 1.3,
     name = '',
     class = '',
     pass = nil,
@@ -126,11 +125,7 @@ OnyBagMate.options = {
 OnyBagMate.store = {};
 
 function OnyBagMate:HandleChatCommand(input)
-    if (input == nil) then
-        return;
-    end
-
-    local arg = strlower(input);
+    local arg = strlower(input or '');
 
     if arg == 'test' then
         OnyBagMate:ScanPlayer();
@@ -138,6 +133,10 @@ function OnyBagMate:HandleChatCommand(input)
         AceConfigDialog:Open('OnyBagMateOptions');
     elseif arg == 'open' then
         self.RollFrame:Render();
+    else
+        self:Print('|cff33ff99' .. L['Usage:'] .. '|r');
+        self:Print('opts|cff33ff99 - ' .. L['to open Options frame'] .. '|r');
+        self:Print('open|cff33ff99 - ' .. L['to open Roll frame'] .. '|r');
     end
 end
 
@@ -162,7 +161,9 @@ function OnyBagMate:OnInitialize()
 end
 
 function OnyBagMate:PrintVersion()
-    print('|cFF00FAF6OnyBagMate loaded! Version: ' .. self.state.version .. '|r');
+    local version = GetAddOnMetadata(self.name, 'Version');
+
+    self:Print('|cff33ff99Version ' .. version .. ' loaded!|r');
 end
 
 function OnyBagMate:ScanPlayer()
@@ -307,7 +308,7 @@ function OnyBagMate:RollList(item)
     self.state.list = result;
 end
 
-function OnyBagMate:GetBonusBase(player)
+function OnyBagMate:GetBonus(player)
     local offNote = select(9, getGuildInfo(player));
 
     if offNote == nil then
@@ -319,7 +320,7 @@ function OnyBagMate:GetBonusBase(player)
     return tonumber(bonus) or 0;
 end
 
-function OnyBagMate:SetBonusBase(player, bonus)
+function OnyBagMate:SetBonus(player, bonus)
     local i, _, _, _, _, _, _, _, offNote = getGuildInfo(player);
 
     if offNote == nil then

@@ -122,7 +122,7 @@ function OnyBagMate.RollFrame:RenderList()
 
     for _, v in ipairs(OnyBagMate.state.list) do
         if (v.bags <= OnyBagMate.state.pass) then
-            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate.store.char.bonuses[v.name] or 0 };
+            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name) };
             if OnyBagMate.store.char.bonusEnable or false then
                 tmp.total = tmp.roll + tmp.bonus;
             else

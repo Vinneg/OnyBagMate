@@ -15,3 +15,6 @@ L['Import csv'] = true;
 L['Clear bonuses'] = true;
 L['CSV data'] = true;
 L['Bonus Keeper'] = true;
+L['Usage:'] = true;
+L['to open Options frame'] = true;
+L['to open Roll frame'] = true;

@@ -15,3 +15,6 @@ L['Import csv'] = 'Импорт csv';
 L['Clear bonuses'] = 'Очистить бонусы';
 L['CSV data'] = 'CSV данные';
 L['Bonus Keeper'] = 'Хранитель бонусов';
+L['Usage:'] = 'Использование:';
+L['to open Options frame'] = 'открыть панель опций';
+L['to open Roll frame'] = 'открыть окно роллов';

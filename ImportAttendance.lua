@@ -49,16 +49,16 @@ function OnyBagMate.AttendanceFrame:Import()
     string.gsub(self.text:GetText(), '[^\r\n]+', function(item) self:ParseLine(item) end);
 
     for i, v in pairs(self.bonuses) do
-        local oldBonus = OnyBagMate:GetBonusBase(i);
+        local oldBonus = OnyBagMate:GetBonus(i);
 
-        OnyBagMate:SetBonusBase(i, (oldBonus or 0) + v);
+        OnyBagMate:SetBonus(i, (oldBonus or 0) + v);
     end
 
     OnyBagMate.store.char.lastBonus = self.lastBonus;
 
     AceGUI:Release(self.frame);
 
-    print('OnyBagMate: imported ' .. (self.firstRaid - self.lastRaid + 1) .. ' raids. Last raid set to ' .. OnyBagMate.store.char.lastBonus);
+    print('OnyBagMate: imported ' .. (self.lastRaid - self.firstRaid + 1) .. ' raids. Last raid set to ' .. OnyBagMate.store.char.lastBonus);
 end
 
 function OnyBagMate.AttendanceFrame:ParseLine(line)
