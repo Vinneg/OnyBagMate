@@ -348,7 +348,7 @@ function OnyBagMate:ClearBonuses()
     for i = 1, ttlMembers do
         local offNote = select(8, GetGuildRosterInfo(i));
 
-        local newOffNote, subs = string.gsub(offNote, 'obm{[^}]*}', '');
+        local newOffNote, subs = string.gsub(offNote, 'obm{[^}]*}', 'obm{0}');
 
         if subs ~= 0 then
             GuildRosterSetOfficerNote(i, newOffNote);
@@ -377,9 +377,9 @@ function OnyBagMate:BANKFRAME_CLOSED()
 end
 
 function OnyBagMate:ENCOUNTER_START(_, id, name, difficulty, groupSize)
---    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
+    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
 end
 
 function OnyBagMate:ENCOUNTER_END(_, id, name, difficulty, groupSize, success)
---    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
+    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
 end
