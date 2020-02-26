@@ -485,6 +485,10 @@ function OnyBagMate:ENCOUNTER_END(_, id, _, _, _, success)
         return;
     end
 
+    if not self.store.char.bonusEnable then
+        return
+    end
+
     if not isMl() then
         return;
     end
