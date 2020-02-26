@@ -43,6 +43,35 @@ local function getGuildInfo(player)
     end
 end
 
+local function isMl()
+    for i = 1, MAX_RAID_MEMBERS do
+        local name, _, _, _, _, _, _, _, _, _, isML = GetRaidRosterInfo(i);
+        name = Ambiguate(name, 'all');
+
+        if OnyBagMate.state.name == name then
+            return isML;
+        end
+    end
+
+    return false;
+end
+
+local function isInRaid(player)
+    for i = 1, MAX_RAID_MEMBERS do
+        local name = GetRaidRosterInfo(i);
+
+        if name then
+            name = Ambiguate(name, 'all');
+
+            if name == player then
+                return true;
+            end
+        end
+    end
+
+    return false;
+end
+
 OnyBagMate.messages = {
     scanEvent = 'OnyBagMateScan',
     prefix = 'OnyBagMate',
@@ -60,6 +89,7 @@ OnyBagMate.state = {
     list = {},
     bagId = 17966,
     bankBagIds = getBanks(),
+    encounterId = 1084,
 };
 
 OnyBagMate.defaults = {
@@ -69,7 +99,8 @@ OnyBagMate.defaults = {
         bonusPoints = '5',
         lastBonus = '',
         bankBags = 0,
-        guild = {},
+        bonusToRaid = false,
+        bonusToGuild = true,
     },
 };
 
@@ -105,17 +136,35 @@ OnyBagMate.options = {
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },
+        bonusToRaid = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            type = 'toggle',
+            order = 40,
+            name = L['Bonuses to Raid'],
+            desc = L['Add bonuses to all raid members (even they are offline)'],
+            get = function() return OnyBagMate.store.char.bonusToRaid or false; end,
+            set = function(_, value) value = value or false; OnyBagMate.store.char.bonusToRaid = value; OnyBagMate.store.char.bonusToGuild = not OnyBagMate.store.char.bonusToRaid; end,
+        },
+        bonusToGuild = {
+            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            type = 'toggle',
+            order = 50,
+            name = L['Bonuses to Guild'],
+            desc = L['Add bonuses to online guild members and all raid members (even they are offline)'],
+            get = function() return OnyBagMate.store.char.bonusToGuild or false; end,
+            set = function(_, value) value = value or false; OnyBagMate.store.char.bonusToGuild = value; OnyBagMate.store.char.bonusToRaid = not OnyBagMate.store.char.bonusToGuild; end,
+        },
         importBonuses = {
             hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
             type = 'execute',
-            order = 40,
+            order = 60,
             name = L['Import csv'],
             func = function() OnyBagMate.AttendanceFrame:Render(); end,
         },
         clearBonuses = {
             hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
             type = 'execute',
-            order = 50,
+            order = 70,
             name = L['Clear bonuses'],
             func = function() OnyBagMate:ClearBonuses(); end,
         },
@@ -128,15 +177,15 @@ function OnyBagMate:HandleChatCommand(input)
     local arg = strlower(input or '');
 
     if arg == 'test' then
-        OnyBagMate:ScanPlayer();
+        self:ENCOUNTER_END(nil, 1084, nil, nil, nil, 1);
     elseif arg == 'opts' then
         AceConfigDialog:Open('OnyBagMateOptions');
     elseif arg == 'open' then
         self.RollFrame:Render();
     else
-        self:Print('|cff33ff99' .. L['Usage:'] .. '|r');
-        self:Print('opts|cff33ff99 - ' .. L['to open Options frame'] .. '|r');
-        self:Print('open|cff33ff99 - ' .. L['to open Roll frame'] .. '|r');
+        self:Print('|cff33ff99', L['Usage:'], '|r');
+        self:Print('opts|cff33ff99 - ', L['to open Options frame'], '|r');
+        self:Print('open|cff33ff99 - ', L['to open Roll frame'], '|r');
     end
 end
 
@@ -148,13 +197,11 @@ function OnyBagMate:OnInitialize()
 
     self:RegisterComm(self.messages.scanEvent, 'handleScanEvent');
 
-    self.state.name = GetUnitName('player', false);
+    self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass("player"));
 
-    self:ClearList();
-
+    self:RegisterEvent('CHAT_MSG_SYSTEM');
     self:RegisterEvent('BANKFRAME_CLOSED');
-    self:RegisterEvent('ENCOUNTER_START');
     self:RegisterEvent('ENCOUNTER_END');
 
     self:ScheduleTimer('PrintVersion', 5);
@@ -163,7 +210,7 @@ end
 function OnyBagMate:PrintVersion()
     local version = GetAddOnMetadata(self.name, 'Version');
 
-    self:Print('|cff33ff99Version ' .. version .. ' loaded!|r');
+    self:Print('|cff33ff99Version ', version, ' loaded!|r');
 end
 
 function OnyBagMate:ScanPlayer()
@@ -253,9 +300,9 @@ function OnyBagMate:handleScanEvent(_, message, _, sender)
 end
 
 function OnyBagMate:ClearList()
-    for _, v in ipairs(self.state.list) do
-        v.roll = 0;
-    end
+    self.state.list = {};
+
+    OnyBagMate:DemandScan();
 end
 
 function OnyBagMate:UpdateList(item)
@@ -346,16 +393,62 @@ function OnyBagMate:ClearBonuses()
     local ttlMembers = GetNumGuildMembers();
 
     for i = 1, ttlMembers do
-        local offNote = select(8, GetGuildRosterInfo(i));
+        local name = select(8, GetGuildRosterInfo(i));
 
-        local newOffNote, subs = string.gsub(offNote, 'obm{[^}]*}', '');
+        local tmp = string.match(offNote, 'obm{(-?%d+%.?%d*)}');
+        local bonus = tonumber(tmp) or 0;
+        bonus = bonus + (tonumber(self.store.char.bonusPoints) or 0);
 
-        if subs ~= 0 then
-            GuildRosterSetOfficerNote(i, newOffNote);
-        end
+        GuildRosterSetOfficerNote(i, newOffNote);
     end
 
     OnyBagMate.store.char.lastBonus = '';
+end
+
+function OnyBagMate:Report(message, channel)
+    SendChatMessage(Lmessage, channel);
+end
+
+function OnyBagMate:AddBonusesToRaid()
+    if not IsInGuild() then
+        return nil;
+    end
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name = GetRaidRosterInfo(i);
+
+        if name then
+            name = Ambiguate(name, 'all');
+
+            local bonus = self:GetBonus(name);
+            self:SetBonus(name, bonus + (tonumber(self.store.char.bonusPoints) or 0));
+        end
+    end
+
+    SendChatMessage(L['OnyBagMate bonuses added to all raid members!'](self.store.char.bonusPoints), self.messages.raid);
+end
+
+function OnyBagMate:AddBonusesToGuild()
+    if not IsInGuild() then
+        return nil;
+    end
+
+    local ttlMembers = GetNumGuildMembers();
+
+    for i = 1, ttlMembers do
+        local name, _, _, _, _, _, _, _, isOnline = GetGuildRosterInfo(i);
+
+        if name then
+            name = Ambiguate(name, 'all');
+
+            if isOnline or isInRaid(name) then
+                local bonus = self:GetBonus(name);
+                self:SetBonus(name, bonus + (tonumber(self.store.char.bonusPoints) or 0));
+            end
+        end
+    end
+
+    SendChatMessage(L['OnyBagMate bonuses added to online guild members!'](self.store.char.bonusPoints), self.messages.guild);
 end
 
 function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
@@ -366,6 +459,17 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     max = tonumber(max);
 
     if (name and roll and min == 1 and max == 100) then
+        if GetZoneText() == L['Onyxia\'s Lair'] then
+            if not self.RollFrame.frame or not self.RollFrame.frame:IsShown() then
+                self.RollFrame:Render();
+
+                local item = { name = name, class = nil, bags = self:ScanPlayer() + (self.store.char.bankBags or 0) };
+
+                self:UpdateList(item);
+                self:UpdatePass(item);
+            end
+        end
+
         self:RollList({ name = name, roll = roll });
 
         self.RollFrame:RenderList();
@@ -376,10 +480,18 @@ function OnyBagMate:BANKFRAME_CLOSED()
     self.store.char.bankBags = self:ScanBank();
 end
 
-function OnyBagMate:ENCOUNTER_START(_, id, name, difficulty, groupSize)
---    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize);
-end
+function OnyBagMate:ENCOUNTER_END(_, id, _, _, _, success)
+    if id ~= self.state.encounterId or success ~= 1 then
+        return;
+    end
 
-function OnyBagMate:ENCOUNTER_END(_, id, name, difficulty, groupSize, success)
---    print('ENCOUNTER_END: id = ', id, ', name = ', name, ', difficulty = ', difficulty, ', groupSize = ', groupSize, ', success = ', success);
+    if not isMl() then
+        return;
+    end
+
+    if self.store.char.bonusToRaid then
+        self:AddBonusesToRaid();
+    elseif self.store.char.bonusToGuild then
+        self:AddBonusesToGuild();
+    end
 end

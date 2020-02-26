@@ -10,12 +10,10 @@ OnyBagMate.RollFrame = {
 };
 
 function OnyBagMate.RollFrame:Render()
-    OnyBagMate:RegisterEvent('CHAT_MSG_SYSTEM');
-
     self.frame = AceGUI:Create('Frame');
     self.frame:SetTitle(L['Onyxia Bag Mate']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); OnyBagMate:ClearList(); AceGUI:Release(widget); end)
+    self.frame:SetCallback('OnClose', function(widget) OnyBagMate:ClearList(); AceGUI:Release(widget); end)
 
     local roll = AceGUI:Create('Button');
     roll:SetText(L['Roll']);
