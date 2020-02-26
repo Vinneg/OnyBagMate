@@ -183,9 +183,9 @@ function OnyBagMate:HandleChatCommand(input)
     elseif arg == 'open' then
         self.RollFrame:Render();
     else
-        self:Print('|cff33ff99' .. L['Usage:'] .. '|r');
-        self:Print('opts|cff33ff99 - ' .. L['to open Options frame'] .. '|r');
-        self:Print('open|cff33ff99 - ' .. L['to open Roll frame'] .. '|r');
+        self:Print('|cff33ff99', L['Usage:'], '|r');
+        self:Print('opts|cff33ff99 - ', L['to open Options frame'], '|r');
+        self:Print('open|cff33ff99 - ', L['to open Roll frame'], '|r');
     end
 end
 
@@ -210,7 +210,7 @@ end
 function OnyBagMate:PrintVersion()
     local version = GetAddOnMetadata(self.name, 'Version');
 
-    self:Print('|cff33ff99Version ' .. version .. ' loaded!|r');
+    self:Print('|cff33ff99Version ', version, ' loaded!|r');
 end
 
 function OnyBagMate:ScanPlayer()
