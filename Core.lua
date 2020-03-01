@@ -459,17 +459,6 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     max = tonumber(max);
 
     if (name and roll and min == 1 and max == 100) then
-        if GetZoneText() == L['Onyxia\'s Lair'] then
-            if not self.RollFrame.frame or not self.RollFrame.frame:IsShown() then
-                self.RollFrame:Render();
-
-                local item = { name = name, class = nil, bags = self:ScanPlayer() + (self.store.char.bankBags or 0) };
-
-                self:UpdateList(item);
-                self:UpdatePass(item);
-            end
-        end
-
         self:RollList({ name = name, roll = roll });
 
         self.RollFrame:RenderList();
