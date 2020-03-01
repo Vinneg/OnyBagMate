@@ -200,7 +200,6 @@ function OnyBagMate:OnInitialize()
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass("player"));
 
-    self:RegisterEvent('CHAT_MSG_SYSTEM');
     self:RegisterEvent('BANKFRAME_CLOSED');
     self:RegisterEvent('ENCOUNTER_END');
 
