@@ -88,8 +88,10 @@ OnyBagMate.state = {
     pass = nil,
     list = {},
     bagId = 17966,
+    bagName = '',
     bankBagIds = getBanks(),
     encounterId = 1084,
+    looting = false,
 };
 
 OnyBagMate.defaults = {
@@ -199,9 +201,12 @@ function OnyBagMate:OnInitialize()
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass("player"));
+    self.state.name = GetItemInfo(self.state.bagId);
 
     self:RegisterEvent('BANKFRAME_CLOSED');
     self:RegisterEvent('ENCOUNTER_END');
+    self:RegisterEvent('LOOT_OPENED');
+    self:RegisterEvent('LOOT_CLOSED');
 
     self:ScheduleTimer('PrintVersion', 5);
 end
@@ -450,6 +455,20 @@ function OnyBagMate:AddBonusesToGuild()
     SendChatMessage(L['OnyBagMate bonuses added to online guild members!'](self.store.char.bonusPoints), self.messages.guild);
 end
 
+function OnyBagMate:BagLootIndex()
+    local count = GetNumLootItems();
+
+    for i = 1, count do
+        local _, name = GetLootSlotInfo(i);
+
+        if name == self.state.bagName then
+            return i;
+        end
+    end
+
+    return nil;
+end
+
 function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     local name, roll, min, max = string.match(message, L['Roll regexp']);
 
@@ -486,4 +505,16 @@ function OnyBagMate:ENCOUNTER_END(_, id, _, _, _, success)
     elseif self.store.char.bonusToGuild then
         self:AddBonusesToGuild();
     end
+end
+
+function OnyBagMate:LOOT_OPENED()
+    self.state.looting = true;
+
+    if self:BagLootIndex() then
+        self.RollFrame:Render();
+    end
+end
+
+function OnyBagMate:LOOT_CLOSED()
+    self.state.looting = false;
 end
