@@ -146,38 +146,33 @@ function OnyBagMate.RollFrame:UpdateStatus(count)
 end
 
 function OnyBagMate.RollFrame:GiveBag(player)
-    print('OnyBagMate.RollFrame:GiveBag(', player, ')');
-
-    if not self.state.looting then
+    if not OnyBagMate.state.looting then
         return;
     end
 
-    return;
+    local lootIndex = OnyBagMate:BagLootIndex();
 
---    local lootIndex = OnyBagMate:BagLootIndex();
---
---    if not lootIndex then
---        return;
---    end
---
---    local playerIndex;
---
---    for i = 1, MAX_RAID_MEMBERS do
---        local name = GetMasterLootCandidate(lootIndex, i);
---
---        if name then
---            name = Ambiguate(name, 'all');
---
---            if name == player then
---                playerIndex = i;
---            end
---        end
---    end
---
---    if not playerIndex then
---        return;
---    end
---
---    print(lootIndex, playerIndex);
---    GiveMasterLoot(lootIndex, playerIndex);
+    if not lootIndex then
+        return;
+    end
+
+    local playerIndex;
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name = GetMasterLootCandidate(lootIndex, i);
+
+        if name then
+            name = Ambiguate(name, 'all');
+
+            if name == player then
+                playerIndex = i;
+            end
+        end
+    end
+
+    if not playerIndex then
+        return;
+    end
+
+    GiveMasterLoot(lootIndex, playerIndex);
 end

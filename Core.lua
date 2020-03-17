@@ -46,10 +46,13 @@ end
 local function isMl()
     for i = 1, MAX_RAID_MEMBERS do
         local name, _, _, _, _, _, _, _, _, _, isML = GetRaidRosterInfo(i);
-        name = Ambiguate(name, 'all');
 
-        if OnyBagMate.state.name == name then
-            return isML;
+        if name then
+            name = Ambiguate(name, 'all');
+
+            if OnyBagMate.state.name == name then
+                return isML;
+            end
         end
     end
 
@@ -201,7 +204,7 @@ function OnyBagMate:OnInitialize()
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass("player"));
-    self.state.name = GetItemInfo(self.state.bagId);
+    self.state.bagName = GetItemInfo(self.state.bagId);
 
     self:RegisterEvent('BANKFRAME_CLOSED');
     self:RegisterEvent('ENCOUNTER_END');
@@ -461,6 +464,8 @@ function OnyBagMate:BagLootIndex()
     for i = 1, count do
         local _, name = GetLootSlotInfo(i);
 
+        name = strsub(name, 1, #self.state.bagName);
+
         if name == self.state.bagName then
             return i;
         end
@@ -493,7 +498,7 @@ function OnyBagMate:ENCOUNTER_END(_, id, _, _, _, success)
     end
 
     if not self.store.char.bonusEnable then
-        return
+        return;
     end
 
     if not isMl() then
