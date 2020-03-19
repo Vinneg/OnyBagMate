@@ -80,6 +80,7 @@ OnyBagMate.messages = {
     prefix = 'OnyBagMate',
     demandScan = 'scan bags',
     raid = 'RAID',
+    warning = 'RAID_WARNING',
     guild = 'GUILD',
     whisper = 'WHISPER',
     answer = '(.+)#(%d+)'
@@ -91,7 +92,8 @@ OnyBagMate.state = {
     pass = nil,
     list = {},
     bagId = 17966,
-    bagName = '',
+    bagName = nil,
+    bagLink = nil,
     bankBagIds = getBanks(),
     encounterId = 1084,
     looting = false,
@@ -106,6 +108,9 @@ OnyBagMate.defaults = {
         bankBags = 0,
         bonusToRaid = false,
         bonusToGuild = true,
+        lootAutoOpen = true,
+        lootAutoAnnounce = true,
+        lootMessage = L['Default Announce Message'],
     },
 };
 
@@ -173,6 +178,33 @@ OnyBagMate.options = {
             name = L['Clear bonuses'],
             func = function() OnyBagMate:ClearBonuses(); end,
         },
+        lootHeader = {
+            type = 'header',
+            order = 80,
+            name = L['Loot'],
+        },
+        lootAutoOpen = {
+            type = 'toggle',
+            order = 90,
+            name = L['Auto open Roll Frame'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
+        lootAutoAnnounce = {
+            type = 'toggle',
+            order = 100,
+            name = L['Auto announce Onyxia Bag'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
+        lootMessage = {
+            hidden = function() return not (OnyBagMate.store.char.lootAutoAnnounce or false); end,
+            type = 'input',
+            order = 110,
+            name = L['Onyxia Bag announce message'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
     },
 };
 
@@ -204,7 +236,7 @@ function OnyBagMate:OnInitialize()
 
     self.state.name = UnitName('player');
     self.state.class = select(2, UnitClass("player"));
-    self.state.bagName = GetItemInfo(self.state.bagId);
+    self.state.bagName, self.state.bagLink = GetItemInfo(self.state.bagId);
 
     self:RegisterEvent('BANKFRAME_CLOSED');
     self:RegisterEvent('ENCOUNTER_END');
@@ -412,10 +444,6 @@ function OnyBagMate:ClearBonuses()
     OnyBagMate.store.char.lastBonus = '';
 end
 
-function OnyBagMate:Report(message, channel)
-    SendChatMessage(Lmessage, channel);
-end
-
 function OnyBagMate:AddBonusesToRaid()
     if not IsInGuild() then
         return nil;
@@ -474,6 +502,12 @@ function OnyBagMate:BagLootIndex()
     return nil;
 end
 
+function OnyBagMate:AnounceRoll()
+    local msg = format(self.store.char.lootMessage, self.state.bagLink);
+
+    SendChatMessage(msg, self.messages.warning);
+end
+
 function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     local name, roll, min, max = string.match(message, L['Roll regexp']);
 
@@ -516,7 +550,13 @@ function OnyBagMate:LOOT_OPENED()
     self.state.looting = true;
 
     if self:BagLootIndex() then
-        self.RollFrame:Render();
+        if self.store.lootAutoAnnounce then
+            self.AnounceRoll();
+        end
+
+        if self.store.lootAutoOpen then
+            self.RollFrame:Render();
+        end
     end
 end
 
