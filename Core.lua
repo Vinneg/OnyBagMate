@@ -234,6 +234,10 @@ function OnyBagMate:OnInitialize()
 
     self:RegisterComm(self.messages.scanEvent, 'handleScanEvent');
 
+    self.state.name = UnitName('player');
+    self.state.class = select(2, UnitClass("player"));
+    self.state.bagName, self.state.bagLink = GetItemInfo(self.state.bagId);
+
     self:RegisterEvent('BANKFRAME_CLOSED');
     self:RegisterEvent('ENCOUNTER_END');
     self:RegisterEvent('LOOT_OPENED');
