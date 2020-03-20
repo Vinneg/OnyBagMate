@@ -234,19 +234,19 @@ function OnyBagMate:OnInitialize()
 
     self:RegisterComm(self.messages.scanEvent, 'handleScanEvent');
 
-    self.state.name = UnitName('player');
-    self.state.class = select(2, UnitClass("player"));
-    self.state.bagName, self.state.bagLink = GetItemInfo(self.state.bagId);
-
     self:RegisterEvent('BANKFRAME_CLOSED');
     self:RegisterEvent('ENCOUNTER_END');
     self:RegisterEvent('LOOT_OPENED');
     self:RegisterEvent('LOOT_CLOSED');
 
-    self:ScheduleTimer('PrintVersion', 5);
+    self:ScheduleTimer('PostInit', 10);
 end
 
-function OnyBagMate:PrintVersion()
+function OnyBagMate:PostInit()
+    self.state.name = UnitName('player');
+    self.state.class = select(2, UnitClass("player"));
+    self.state.bagName, self.state.bagLink = GetItemInfo(self.state.bagId);
+
     local version = GetAddOnMetadata(self.name, 'Version');
 
     self:Print('|cff33ff99Version ', version, ' loaded!|r');
