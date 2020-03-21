@@ -59,7 +59,7 @@ local function isMl()
     return false;
 end
 
-local function isInRaid(player)
+local function unitInRaid(player)
     for i = 1, MAX_RAID_MEMBERS do
         local name = GetRaidRosterInfo(i);
 
@@ -91,7 +91,8 @@ OnyBagMate.state = {
     class = '',
     pass = nil,
     list = {},
-    bagId = 17966,
+--    bagId = 17966,
+    bagId = 3198,
     bagName = nil,
     bagLink = nil,
     bankBagIds = getBanks(),
@@ -480,7 +481,7 @@ function OnyBagMate:AddBonusesToGuild()
         if name then
             name = Ambiguate(name, 'all');
 
-            if isOnline or isInRaid(name) then
+            if isOnline or unitInRaid(name) then
                 local bonus = self:GetBonus(name);
                 self:SetBonus(name, bonus + (tonumber(self.store.char.bonusPoints) or 0));
             end
@@ -553,13 +554,21 @@ end
 function OnyBagMate:LOOT_OPENED()
     self.state.looting = true;
 
+    if not IsInRaid() then
+        return;
+    end
+
+    if not isMl() then
+        return;
+    end
+
     if self:BagLootIndex() then
-        if self.store.lootAutoAnnounce then
-            self.AnounceRoll();
+        if self.store.char.lootAutoOpen then
+            self.RollFrame:Render();
         end
 
-        if self.store.lootAutoOpen then
-            self.RollFrame:Render();
+        if self.store.char.lootAutoAnnounce then
+            self:AnounceRoll();
         end
     end
 end
