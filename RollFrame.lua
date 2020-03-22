@@ -97,12 +97,13 @@ function OnyBagMate.RollFrame:RenderList()
 
         self.list:AddChild(row);
 
-        local name = AceGUI:Create('Label');
-        name:SetFont(df, 18, 'OUTLINE');
+        local name = AceGUI:Create('InteractiveLabel');
+        name:SetFont(df, 14, 'OUTLINE');
         name:SetColor(classColor(item.class));
         name:SetText(item.name);
         name:SetRelativeWidth(0.4);
         name:SetFullHeight(true);
+        name:SetCallback('OnClick', function() self:GiveBag(item.name) end);
         row:AddChild(name);
 
         local rollTotal = (item.roll or 0);
@@ -111,7 +112,7 @@ function OnyBagMate.RollFrame:RenderList()
         end
 
         local roll = AceGUI:Create('Label');
-        roll:SetFont(df, 18, 'OUTLINE');
+        roll:SetFont(df, 14, 'OUTLINE');
         roll:SetText(rollTotal);
         roll:SetRelativeWidth(0.6);
         roll:SetFullHeight(true);
@@ -142,4 +143,36 @@ end
 
 function OnyBagMate.RollFrame:UpdateStatus(count)
     self.frame:SetStatusText(L['Frame status'](count));
+end
+
+function OnyBagMate.RollFrame:GiveBag(player)
+    if not OnyBagMate.state.looting then
+        return;
+    end
+
+    local lootIndex = OnyBagMate:BagLootIndex();
+
+    if not lootIndex then
+        return;
+    end
+
+    local playerIndex;
+
+    for i = 1, MAX_RAID_MEMBERS do
+        local name = GetMasterLootCandidate(lootIndex, i);
+
+        if name then
+            name = Ambiguate(name, 'all');
+
+            if name == player then
+                playerIndex = i;
+            end
+        end
+    end
+
+    if not playerIndex then
+        return;
+    end
+
+    GiveMasterLoot(lootIndex, playerIndex);
 end
