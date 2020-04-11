@@ -436,13 +436,13 @@ function OnyBagMate:ClearBonuses()
     local ttlMembers = GetNumGuildMembers();
 
     for i = 1, ttlMembers do
-        local name = select(8, GetGuildRosterInfo(i));
+        local name = GetGuildRosterInfo(i);
 
-        local tmp = string.match(offNote, 'obm{(-?%d+%.?%d*)}');
-        local bonus = tonumber(tmp) or 0;
-        bonus = bonus + (tonumber(self.store.char.bonusPoints) or 0);
+        if (name) then
+            name = Ambiguate(name, 'all');
 
-        GuildRosterSetOfficerNote(i, newOffNote);
+            self:SetBonus(name, 0);
+        end
     end
 
     OnyBagMate.store.char.lastBonus = '';
