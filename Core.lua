@@ -544,9 +544,9 @@ function OnyBagMate:ENCOUNTER_END(_, id, _, _, _, success)
     end
 
     if self.store.char.bonusToRaid then
-        self:AddBonusesToRaid();
+        self:ScheduleTimer('AddBonusesToRaid', 5);
     elseif self.store.char.bonusToGuild then
-        self:AddBonusesToGuild();
+        self:ScheduleTimer('AddBonusesToGuild', 5);
     end
 end
 
