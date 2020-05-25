@@ -106,10 +106,7 @@ function OnyBagMate.RollFrame:RenderList()
         name:SetCallback('OnClick', function() self:GiveBag(item.name) end);
         row:AddChild(name);
 
-        local rollTotal = (item.roll or 0);
-        if OnyBagMate.store.char.bonusEnable or false then
-            rollTotal = '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. 'roll + ' .. (item.bonus or 0) .. 'bonus)';
-        end
+        local rollTotal = L['OnyBagMate roll item'](item, OnyBagMate.store);
 
         local roll = AceGUI:Create('Label');
         roll:SetFont(df, 14, 'OUTLINE');
@@ -122,12 +119,21 @@ function OnyBagMate.RollFrame:RenderList()
     local result = {};
 
     for _, v in ipairs(OnyBagMate.state.list) do
-        if (v.bags <= OnyBagMate.state.pass) then
-            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name) };
+        if (OnyBagMate.store.char.modeClassic) then
+            if (v.bags <= OnyBagMate.state.pass) then
+                local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name) };
+                if OnyBagMate.store.char.bonusEnable or false then
+                    tmp.total = tmp.roll + tmp.bonus;
+                else
+                    tmp.total = tmp.roll;
+                end
+
+                tinsert(result, tmp);
+            end
+        elseif (OnyBagMate.store.char.modeGreed) then
+            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name), fine = v.bags * OnyBagMate.store.char.bonusFine };
             if OnyBagMate.store.char.bonusEnable or false then
-                tmp.total = tmp.roll + tmp.bonus;
-            else
-                tmp.total = tmp.roll;
+                tmp.total = tmp.roll + tmp.bonus - tmp.fine;
             end
 
             tinsert(result, tmp);

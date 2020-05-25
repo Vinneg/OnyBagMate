@@ -101,9 +101,11 @@ OnyBagMate.state = {
 
 OnyBagMate.defaults = {
     char = {
-        rank = '',
+        modeClassic = true,
+        modeGreed = false,
         bonusEnable = true,
         bonusPoints = '5',
+        bonusFine = '100',
         lastBonus = '',
         bankBags = 0,
         bonusToRaid = false,
@@ -119,12 +121,23 @@ OnyBagMate.options = {
     handler = OnyBagMate,
     type = 'group',
     args = {
-        rank = {
-            type = 'input',
-            order = 1,
-            name = L['Rank # and above'],
-            get = function(info) return get(info); end,
-            set = function(info, value) set(info, value); end,
+        modeClassic = {
+            type = 'toggle',
+            order = 0,
+            width = 'full',
+            name = L['Classic mode'],
+            desc = L['Players with a minimum number of bags rolls for new one'],
+            get = function() return OnyBagMate.store.char.modeClassic or false; end,
+            set = function(_, value) value = value or false; OnyBagMate.store.char.modeClassic = value; OnyBagMate.store.char.modeGreed = not OnyBagMate.store.char.modeClassic; end,
+        },
+        modeGreed = {
+            type = 'toggle',
+            order = 5,
+            width = 'full',
+            name = L['Greed mode'],
+            desc = L['All players rolls for new bag, bonuses decreases per bag owned'],
+            get = function() return OnyBagMate.store.char.modeGreed or false; end,
+            set = function(_, value) value = value or false; OnyBagMate.store.char.modeGreed = value; OnyBagMate.store.char.modeClassic = not OnyBagMate.store.char.modeGreed; end,
         },
         bonusHeader = {
             type = 'header',
@@ -143,6 +156,15 @@ OnyBagMate.options = {
             type = 'input',
             order = 30,
             name = L['Roll bonus per Onyxia kill'],
+            get = function(info) return get(info); end,
+            set = function(info, value) set(info, value); end,
+        },
+        bonusFine = {
+            hidden = function() return not (OnyBagMate.store.char.modeGreed or false); end,
+            type = 'input',
+            order = 35,
+            name = L['Roll fine'],
+            name = L['Roll fine per Onyxia bag owned'],
             get = function(info) return get(info); end,
             set = function(info, value) set(info, value); end,
         },

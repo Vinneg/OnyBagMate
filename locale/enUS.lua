@@ -29,3 +29,20 @@ L['Bonuses to Guild'] = true;
 L['Add bonuses to online guild members and all raid members (even they are offline)'] = true;
 L['OnyBagMate bonuses added to all raid members!'] = function(bonuses) return '' .. (tonumber(bonuses) or 0) .. ' OnyBagMate bonuses added to all raid members!' end;
 L['OnyBagMate bonuses added to online guild members!'] = function(bonuses) return '' .. (tonumber(bonuses) or 0) .. ' OnyBagMate bonuses added to online guild members!' end;
+L['Classic mode'] = true;
+L['Greed mode'] = true;
+L['Players with a minimum number of bags rolls for new one'] = true;
+L['All players rolls for new bag, bonuses decreases per bag owned'] = true;
+L['Roll fine'] = true;
+L['Roll fine per Onyxia bag owned'] = true;
+L['OnyBagMate roll item'] = function(item, store)
+    if (store.char.modeClassic) then
+        if store.char.bonusEnable or false then
+            return '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. ' roll + ' .. (item.bonus or 0) .. ' bonus)';
+        else
+            return '' .. (item.total or 0)
+        end
+    elseif (store.char.modeGreed) then
+        return '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. ' roll + ' .. (item.bonus or 0) .. ' bonus - ' .. (item.fine or 0) .. ' fine)';
+    end
+end;

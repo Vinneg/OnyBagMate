@@ -29,3 +29,20 @@ L['Bonuses to Guild'] = 'Бонусы Гильдии';
 L['Add bonuses to online guild members and all raid members (even they are offline)'] = 'Добавление бонусов онлайн членам гильдии и всем участникам рейда (даже если оффлайн)';
 L['OnyBagMate bonuses added to all raid members!'] = function(bonuses) return '' .. (tonumber(bonuses) or 0) .. ' OnyBagMate бонусов добавлено всем участникам рейда!' end;
 L['OnyBagMate bonuses added to online guild members!'] = function(bonuses) return '' .. (tonumber(bonuses) or 0) .. ' OnyBagMate бонусов добавлено всем онлайн членам гильдии!' end;
+L['Classic mode'] = "Классический режим";
+L['Greed mode'] = 'Жадный режим';
+L['Players with a minimum number of bags rolls for new one'] = 'На новую сумку роллят только игроки с минимальным количеством сумок';
+L['All players rolls for new bag, bonuses decreases per bag owned'] = 'Все роллят на новую сумку, бонус уменьшается за каждую сумку у игрока';
+L['Roll fine'] = 'Налог на бонусы';
+L['Roll fine per Onyxia bag owned'] = 'Налог на бонусы за каждую сумку у игрока';
+L['OnyBagMate roll item'] = function(item, store)
+    if (store.char.modeClassic) then
+        if store.char.bonusEnable or false then
+            return '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. ' ролл + ' .. (item.bonus or 0) .. ' бонус)';
+        else
+            return '' .. (item.total or 0)
+        end
+    elseif (store.char.modeGreed) then
+        return '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. ' ролл + ' .. (item.bonus or 0) .. ' бонус - ' .. (item.fine or 0) .. ' налог)';
+    end
+end;

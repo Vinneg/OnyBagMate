@@ -1,5 +1,5 @@
 ## Interface: 11303
-## Version: 1.6
+## Version: 1.7
 ## Title: Onixia Bag Mate
 ## Author: Vinneg
 ## Notes: A little helper with Onyxia bag distribution. Usage: /onybm to see commands
