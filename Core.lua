@@ -101,9 +101,11 @@ OnyBagMate.state = {
 
 OnyBagMate.defaults = {
     char = {
-        rank = '',
+        modeClassic = true,
+        modeGreed = false,
         bonusEnable = true,
         bonusPoints = '5',
+        bonusFine = '100',
         lastBonus = '',
         bankBags = 0,
         bonusToRaid = false,
@@ -158,7 +160,7 @@ OnyBagMate.options = {
             set = function(info, value) set(info, value); end,
         },
         bonusFine = {
-            hidden = function() return not (OnyBagMate.store.char.bonusEnable or false); end,
+            hidden = function() return not (OnyBagMate.store.char.modeGreed or false); end,
             type = 'input',
             order = 35,
             name = L['Roll fine'],

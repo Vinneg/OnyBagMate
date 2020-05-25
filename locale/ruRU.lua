@@ -33,5 +33,16 @@ L['Classic mode'] = "Классический режим";
 L['Greed mode'] = 'Жадный режим';
 L['Players with a minimum number of bags rolls for new one'] = 'На новую сумку роллят только игроки с минимальным количеством сумок';
 L['All players rolls for new bag, bonuses decreases per bag owned'] = 'Все роллят на новую сумку, бонус уменьшается за каждую сумку у игрока';
-L['Roll fine'] = 'Штраф на бонусы';
-L['Roll fine per Onyxia bag owned'] = 'Штраф на бонусы за каждую сумку у игрока';
+L['Roll fine'] = 'Налог на бонусы';
+L['Roll fine per Onyxia bag owned'] = 'Налог на бонусы за каждую сумку у игрока';
+L['OnyBagMate roll item'] = function(item, store)
+    if (store.char.modeClassic) then
+        if store.char.bonusEnable or false then
+            return '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. ' ролл + ' .. (item.bonus or 0) .. ' бонус)';
+        else
+            return '' .. (item.total or 0)
+        end
+    elseif (store.char.modeGreed) then
+        return '' .. (item.total or 0) .. ' (' .. (item.roll or 0) .. ' ролл + ' .. (item.bonus or 0) .. ' бонус - ' .. (item.fine or 0) .. ' налог)';
+    end
+end;
