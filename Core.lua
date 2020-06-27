@@ -354,70 +354,22 @@ function OnyBagMate:handleScanEvent(_, message, _, sender)
         local class, bags = string.match(message, self.messages.answer);
 
         if class and bags then
-            local item = { name = sender, class = class, bags = tonumber(bags) };
+            local tmp = self.state.list[sender] or {};
+            tmp.name = sender;
+            tmp.class = class;
+            tmp.bags = tonumber(bags);
+            self.state.list[sender] = tmp;
 
-            self:UpdateList(item);
-            self:UpdatePass(item);
+            self.state.pass = math.min(self.state.pass or tonumber(bags), tonumber(bags));
 
             self.RollFrame:RenderList();
+            self.RollFrame:UpdateStatus(self.state.pass);
         end
     end
 end
 
-function OnyBagMate:ClearList()
+function OnyBagMate:ResetList()
     self.state.list = {};
-
-    OnyBagMate:DemandScan();
-end
-
-function OnyBagMate:UpdateList(item)
-    local result = self.state.list or {};
-    local found = false;
-
-    for _, v in ipairs(result) do
-        if v.name == item.name then
-            v.class = item.class;
-            v.bags = item.bags;
-
-            found = true;
-        end
-    end
-
-    if not found then
-        tinsert(result, item);
-    end
-
-    sort(result, function(a, b) return a.name < b.name end);
-
-    self.state.list = result;
-end
-
-function OnyBagMate:UpdatePass(item)
-    local pass = self.state.pass;
-
-    if (pass == nil) then
-        pass = item.bags;
-    else
-        pass = math.min(pass, item.bags);
-    end
-
-    self.state.pass = pass;
-
-    self.RollFrame:UpdateStatus(self.state.pass);
-end
-
-function OnyBagMate:RollList(item)
-    local result = self.state.list or {};
-
-    for _, v in ipairs(result) do
-        if (v.name == item.name and (v.roll == nil or v.roll == 0)) then
-            v.roll = item.roll;
-        end
-    end
-
-    sort(result, function(a, b) return (a.roll or 0) > (b.roll or 0) end);
-
-    self.state.list = result;
 end
 
 function OnyBagMate:GetBonus(player)
@@ -541,8 +493,12 @@ function OnyBagMate:CHAT_MSG_SYSTEM(_, message)
     min = tonumber(min);
     max = tonumber(max);
 
-    if (name and roll and min == 1 and max == 100) then
-        self:RollList({ name = name, roll = roll });
+    if not name or not self.state.list[name] or not (self.state.list[name].roll or 0) == 0 then
+        return;
+    end
+
+    if (min == 1 and max == 100) then
+        self.state.list[name].roll = roll;
 
         self.RollFrame:RenderList();
     end
@@ -582,6 +538,8 @@ function OnyBagMate:LOOT_OPENED()
     if not isMl() then
         return;
     end
+
+    self:ResetList();
 
     if self:BagLootIndex() then
         if self.store.char.lootAutoOpen then
