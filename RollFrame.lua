@@ -15,7 +15,7 @@ function OnyBagMate.RollFrame:Render()
     self.frame = AceGUI:Create('Frame');
     self.frame:SetTitle(L['Onyxia Bag Mate']);
     self.frame:SetLayout(nil);
-    self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); OnyBagMate:ClearList(); AceGUI:Release(widget); end)
+    self.frame:SetCallback('OnClose', function(widget) OnyBagMate:UnregisterEvent('CHAT_MSG_SYSTEM'); OnyBagMate:ResetList(); AceGUI:Release(widget); end)
 
     local roll = AceGUI:Create('Button');
     roll:SetText(L['Roll']);
@@ -27,7 +27,7 @@ function OnyBagMate.RollFrame:Render()
     local clear = AceGUI:Create('Button');
     clear:SetText(L['Clear']);
     clear:SetFullWidth(true);
-    clear:SetCallback('OnClick', function() OnyBagMate:ClearList(); self:RenderList(); end);
+    clear:SetCallback('OnClick', function() OnyBagMate:ResetList(); OnyBagMate:DemandScan(); self:RenderList(); end);
 
     self.frame:AddChild(clear);
 
@@ -118,10 +118,11 @@ function OnyBagMate.RollFrame:RenderList()
 
     local result = {};
 
-    for _, v in ipairs(OnyBagMate.state.list) do
+    for _, v in pairs(OnyBagMate.state.list) do
         if (OnyBagMate.store.char.modeClassic) then
             if (v.bags <= OnyBagMate.state.pass) then
                 local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name) };
+
                 if OnyBagMate.store.char.bonusEnable or false then
                     tmp.total = tmp.roll + tmp.bonus;
                 else
@@ -131,7 +132,8 @@ function OnyBagMate.RollFrame:RenderList()
                 tinsert(result, tmp);
             end
         elseif (OnyBagMate.store.char.modeGreed) then
-            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name), fine = v.bags * OnyBagMate.store.char.bonusFine };
+            local tmp = { name = v.name, class = v.class, roll = v.roll or 0, bonus = OnyBagMate:GetBonus(v.name), fine = (v.bags or 0) * OnyBagMate.store.char.bonusFine };
+
             if OnyBagMate.store.char.bonusEnable or false then
                 tmp.total = tmp.roll + tmp.bonus - tmp.fine;
             end
